@@ -1,0 +1,447 @@
+/*
+ * Cyber Teal Design System
+ * 融合 AI 智慧蓝与生机绿，体现 AI Agent 持续进化的特质
+ */
+
+/* ===== 品牌色系 ===== */
+:root {
+  --vp-c-brand-1: #0d9488;
+  --vp-c-brand-2: #0f766e;
+  --vp-c-brand-3: #115e59;
+  --vp-c-brand-soft: rgba(13, 148, 136, 0.1);
+
+  /* Hero 渐变 */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #0d9488 0%, #3b82f6 100%);
+
+  /* 亮色模式 Hero 光晕 */
+  --vp-home-hero-image-filter: blur(44px);
+  --vp-home-hero-image-background-image: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 70%);
+
+  /* 阅读体验变量 */
+  --content-max-width: 780px;
+  --content-line-height: 1.85;
+  --code-bg: #f6f8fa;
+  --selection-bg: rgba(13, 148, 136, 0.18);
+
+  /* 亮色卡片增强 */
+  --card-shadow-light: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(13, 148, 136, 0.06);
+  --card-shadow-hover: 0 6px 24px -4px rgba(13, 148, 136, 0.18), 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  --vp-c-brand-1: #2dd4bf;
+  --vp-c-brand-2: #14b8a6;
+  --vp-c-brand-3: #0d9488;
+  --vp-home-hero-image-filter: blur(40px);
+  --vp-home-hero-image-background-image: radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, transparent 70%);
+  --code-bg: #161b22;
+  --card-shadow-light: none;
+  --card-shadow-hover: 0 8px 24px -8px rgba(13, 148, 136, 0.2);
+}
+
+/* ===== 全局基础 ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: inherit;
+}
+
+/* ===== Hero 区域 ===== */
+.VPHero {
+  padding-top: 120px;
+  padding-bottom: 80px;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(13, 148, 136, 0.08) 0%, transparent 60%),
+    linear-gradient(rgba(13, 148, 136, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.025) 1px, transparent 1px);
+  background-size: auto, 50px 50px, 50px 50px;
+}
+
+.dark .VPHero {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(45, 212, 191, 0.06) 0%, transparent 60%),
+    linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+  background-size: auto, 50px 50px, 50px 50px;
+}
+
+.VPHero .container {
+  max-width: 1280px;
+}
+
+.VPHero .name {
+  font-size: 56px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.VPHero .text {
+  font-size: 26px;
+  line-height: 1.35;
+  font-weight: 500;
+  margin-top: 20px;
+  color: var(--vp-c-text-2);
+}
+
+.VPHero .tagline {
+  font-size: 17px;
+  line-height: 1.7;
+  margin-top: 20px;
+  color: var(--vp-c-text-3);
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.VPHero .actions {
+  margin-top: 44px;
+  gap: 14px;
+}
+
+/* Hero 底部分割线 */
+.VPHero::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--vp-c-brand-1), #3b82f6);
+  border-radius: 2px;
+}
+
+.VPHero {
+  position: relative;
+  overflow: visible;
+}
+
+/* ===== 按钮 ===== */
+.VPButton {
+  padding: 11px 26px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+.VPButton.brand {
+  background: var(--vp-c-brand-1);
+  border: 1px solid var(--vp-c-brand-1);
+}
+
+.VPButton.brand:hover {
+  background: var(--vp-c-brand-2);
+  border-color: var(--vp-c-brand-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+}
+
+.VPButton.alt {
+  background: transparent;
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-1);
+}
+
+.VPButton.alt:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+}
+
+/* ===== 首页背景 ===== */
+.VPHome {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(13, 148, 136, 0.025) 30%,
+    rgba(59, 130, 246, 0.02) 60%,
+    transparent 100%
+  );
+}
+
+.dark .VPHome {
+  background: none;
+}
+
+/* ===== 首页内容区域 ===== */
+.VPHomeFeatures {
+  padding: 0;
+}
+
+.vp-doc.container {
+  max-width: 1280px;
+  padding-top: 56px;
+  padding-bottom: 80px;
+}
+
+.vp-doc h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-top: 56px;
+  margin-bottom: 24px;
+  border-top: none;
+  padding-top: 0;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--vp-c-text-1);
+}
+
+/* 首页 h2 下的装饰线 */
+.vp-doc h2::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--vp-c-brand-1);
+  margin: 10px auto 0;
+  border-radius: 1px;
+  opacity: 0.6;
+}
+
+/* ===== 文档内容页阅读体验 ===== */
+.VPDoc .vp-doc {
+  font-size: 16px;
+  line-height: var(--content-line-height);
+  color: var(--vp-c-text-1);
+}
+
+/* 段落间距 */
+.VPDoc .vp-doc p {
+  margin-top: 0;
+  margin-bottom: 1.25em;
+}
+
+/* 内容区段落最大宽度，保证舒适的阅读行长 */
+.VPDoc .vp-doc > div > p,
+.VPDoc .vp-doc > div > ul,
+.VPDoc .vp-doc > div > ol,
+.VPDoc .vp-doc > div > blockquote {
+  max-width: var(--content-max-width);
+}
+
+/* 文档标题优化 */
+.VPDoc .vp-doc h1 {
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin-bottom: 1.5rem;
+}
+
+.VPDoc .vp-doc h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-align: left;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.VPDoc .vp-doc h2::after {
+  display: none;
+}
+
+.VPDoc .vp-doc h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--vp-c-text-1);
+}
+
+/* 列表 */
+.VPDoc .vp-doc ul,
+.VPDoc .vp-doc ol {
+  font-size: 1em;
+  line-height: 1.8;
+  padding-left: 1.5em;
+}
+
+.VPDoc .vp-doc li {
+  margin-bottom: 0.4em;
+}
+
+/* 引用块 */
+.VPDoc .vp-doc blockquote {
+  border-left: 3px solid var(--vp-c-brand-1);
+  padding: 0.75em 1.25em;
+  background: var(--vp-c-brand-soft);
+  border-radius: 0 8px 8px 0;
+  color: var(--vp-c-text-2);
+  margin: 1.5em 0;
+}
+
+.VPDoc .vp-doc blockquote p {
+  margin: 0;
+}
+
+/* 行内代码 */
+.VPDoc .vp-doc code:not(pre code) {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  padding: 0.2em 0.45em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* 代码块容器 */
+.VPDoc .vp-doc div[class*='language-'] {
+  border-radius: 10px;
+  margin: 1.5em 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dark .VPDoc .vp-doc div[class*='language-'] {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 代码块语言标签 */
+.VPDoc .vp-doc div[class*='language-'] span.lang {
+  opacity: 0.5;
+  font-size: 0.75em;
+}
+
+/* 表格 */
+.VPDoc .vp-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.95em;
+}
+
+.VPDoc .vp-doc th {
+  background: var(--vp-c-bg-soft);
+  font-weight: 600;
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--vp-c-divider);
+  white-space: nowrap;
+}
+
+.VPDoc .vp-doc td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--vp-c-divider);
+  line-height: 1.6;
+}
+
+.VPDoc .vp-doc tr:last-child td {
+  border-bottom: none;
+}
+
+.VPDoc .vp-doc tr:hover td {
+  background: var(--vp-c-bg-soft);
+}
+
+/* ===== 侧边栏优化 ===== */
+.VPSidebar .group + .group {
+  border-top: 1px solid var(--vp-c-divider);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.VPSidebarItem.is-active > .item .link {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+
+.VPSidebarItem.is-active > .item .link::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 16px;
+  background: var(--vp-c-brand-1);
+  border-radius: 2px;
+}
+
+/* ===== 目录 (TOC) ===== */
+.VPDocAsideOutline .outline-link.active {
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+}
+
+/* ===== 页脚导航 ===== */
+.VPDocFooter {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* ===== 首页"适合人群"列表区域 ===== */
+.VPDoc .vp-doc > div > ul {
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.04) 0%, rgba(59, 130, 246, 0.04) 100%);
+  border: 1px solid rgba(13, 148, 136, 0.12);
+  padding: 16px 16px 16px 36px;
+  margin-top: 16px;
+}
+
+.dark .VPDoc .vp-doc > div > ul {
+  background: rgba(45, 212, 191, 0.04);
+  border-color: rgba(45, 212, 191, 0.1);
+}
+
+.VPDoc .vp-doc > div > ul li {
+  color: var(--vp-c-text-2);
+  margin-bottom: 0.6em;
+}
+
+.VPDoc .vp-doc > div > ul li:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 960px) {
+  .VPHero {
+    padding-top: 80px;
+    padding-bottom: 64px;
+  }
+
+  .VPHero .name {
+    font-size: 44px;
+  }
+
+  .VPHero .text {
+    font-size: 22px;
+  }
+
+  .VPHero .tagline {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .VPHero {
+    padding-top: 60px;
+    padding-bottom: 48px;
+  }
+
+  .VPHero .name {
+    font-size: 34px;
+  }
+
+  .VPHero .text {
+    font-size: 19px;
+  }
+
+  .VPHero .tagline {
+    font-size: 15px;
+  }
+
+  .VPButton {
+    padding: 10px 22px;
+    font-size: 14px;
+  }
+}
