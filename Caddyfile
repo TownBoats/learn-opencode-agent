@@ -1,4 +1,4 @@
-3000 {
+:3000 {
   root * /app/.vitepress/dist
   file_server
   try_files {path} /index.html
