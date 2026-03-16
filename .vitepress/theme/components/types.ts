@@ -29,6 +29,17 @@ export interface RuntimeLifecycleDiagramProps {
   highlightKeys?: string[]
 }
 
+export interface TechItem {
+  name: string
+  category: string
+  description: string
+}
+
+export interface TechGroup {
+  label: string
+  items: TechItem[]
+}
+
 export interface LearningPathChapter {
   name: string
   link: string

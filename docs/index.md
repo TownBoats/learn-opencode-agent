@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: 开始阅读
-      link: /01-agent-basics/index
+      link: /00-what-is-ai-agent/index
     - theme: alt
       text: 阅读地图
       link: /reading-map

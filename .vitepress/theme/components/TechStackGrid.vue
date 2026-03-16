@@ -1,14 +1,5 @@
 <script setup lang="ts">
-interface TechItem {
-  name: string
-  category: string
-  description: string
-}
-
-interface TechGroup {
-  label: string
-  items: TechItem[]
-}
+import type { TechItem, TechGroup } from './types'
 
 const groups: TechGroup[] = [
   {

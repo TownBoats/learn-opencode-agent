@@ -63,7 +63,7 @@ const phases: LearningPhase[] = [
       :key="phase.number"
       class="phase-card"
     >
-      <div v-if="index < phases.length - 1" class="phase-connector" aria-hidden="true">
+      <div v-if="index % 2 === 0 && index < phases.length - 1" class="phase-connector" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
