@@ -364,6 +364,31 @@ OpenCode 支持 `primary` 和 `subagent` 两种模式，我们在第二部分会
 
 ## 2.5 Execution Loop：Agent 的工作循环
 
+<ReActLoop />
+
+**Agent Loop 时序图：**
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 用户
+    participant L as 🔄 Execution Loop
+    participant M as 🧠 LLM
+    participant T as ⚡ Tool
+
+    U->>L: 发送消息
+    L->>M: 调用（携带历史 + 工具定义）
+
+    loop 直到任务完成
+        M-->>L: tool_call（工具名 + 参数）
+        L->>T: 执行工具
+        T-->>L: 工具结果
+        L->>M: 携带工具结果再次调用
+    end
+
+    M-->>L: 输出文本（finish_reason: stop）
+    L->>U: 返回最终结果
+```
+
 ### Loop 的基本结构
 
 Execution Loop（执行循环）是把前四个组件串联起来的控制逻辑：
@@ -526,6 +551,20 @@ LLM 返回 finish_reason = "stop"
 │  │(ReAct规划)│                                       │
 │  └──────────┘                                        │
 └─────────────────────────────────────────────────────┘
+```
+
+上图用 Mermaid 更清晰地表示：
+
+```mermaid
+graph TD
+    subgraph LOOP[Execution Loop]
+        direction TB
+        LLM[🧠 LLM\n决策中心] -->|tool_call| TR[⚡ Tools Registry\nread/write/bash/grep...]
+        TR -->|tool_result| LLM
+    end
+    PLAN[📋 Planning\nSystem Prompt / ReAct] -->|指导行为| LLM
+    MEM[💾 Memory\n短期: messages[]\n长期: SQLite] -->|对话历史| LLM
+    LLM -->|持久化| MEM
 ```
 
 **一次典型任务的完整流程**：

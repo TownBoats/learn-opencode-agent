@@ -22,6 +22,39 @@ Desktop（packages/desktop/ = Tauri + packages/app/）
 
 这个决策带来了显著的好处：新增一个客户端（比如 iOS 应用、VS Code 插件）不需要重新实现任何 AI 逻辑，只需要消费同一套 API。
 
+```mermaid
+graph TB
+    subgraph 客户端
+        CLI[CLI/TUI\nInk + React]
+        WEB[Web App\nSolidJS]
+        DESK[Desktop\nTauri + Rust]
+        VS[VSCode\n扩展]
+    end
+
+    subgraph 共享层
+        SDK[JS SDK\npackages/sdk/js]
+        UI[UI 组件库\npackages/ui]
+    end
+
+    subgraph 服务端
+        API[HTTP API\n:4096]
+        CORE[Agent Core\nprocessor.ts]
+    end
+
+    CLI --> API
+    WEB --> SDK --> API
+    DESK --> SDK
+    VS --> SDK
+
+    WEB --> UI
+    DESK --> UI
+
+    API --> CORE
+
+    style API fill:#1d4ed8,color:#fff
+    style CORE fill:#065f46,color:#fff
+```
+
 ## packages/app：共享 Web UI
 
 `packages/app` 是同时被 Web 发布版和 Tauri 桌面端使用的 SolidJS 应用。它的架构值得深入分析。

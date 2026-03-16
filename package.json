@@ -6,10 +6,12 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-"start": "caddy run --config /Caddyfile --adapter caddyfile"
+    "start": "caddy run --config /Caddyfile --adapter caddyfile"
   },
   "devDependencies": {
+    "mermaid": "^11.13.0",
     "typescript": "^5.8.2",
-    "vitepress": "^1.5.0"
+    "vitepress": "^1.5.0",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }

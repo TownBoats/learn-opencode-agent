@@ -1,3 +1,4 @@
+import { withMermaid } from 'vitepress-plugin-mermaid'
 import { defineConfig } from 'vitepress'
 
 const siteTitle = '从零构建 AI Coding Agent'
@@ -5,7 +6,7 @@ const siteDescription = 'OpenCode 源码剖析与实战'
 const bookRepository = 'https://github.com/qqzhangyanhua/learn-opencode-agent'
 const sourceRepository = 'https://github.com/anomalyco/opencode/tree/dev'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   srcDir: 'docs',
   title: siteTitle,
   description: siteDescription,
@@ -144,4 +145,6 @@ export default defineConfig({
       provider: 'local'
     }
   }
-})
+}))
+
+

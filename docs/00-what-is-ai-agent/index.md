@@ -106,6 +106,32 @@ Agent 自主决策：
 - 根据结果动态调整
 - 可以调用多种工具
 
+### 三者关系图示
+
+```mermaid
+graph LR
+    U[👤 用户请求] --> CB[Chatbot]
+    U --> WF[Workflow]
+    U --> AG[Agent]
+
+    CB --> |一次性生成| R1[📝 文本回复]
+
+    WF --> S1[步骤1]
+    S1 --> S2[步骤2]
+    S2 --> S3[步骤3]
+    S3 --> R2[📝 固定输出]
+
+    AG --> T{思考与决策}
+    T --> |调用工具| Tool[🔧 工具执行]
+    Tool --> |观察结果| T
+    T --> |任务完成| R3[📝 动态输出]
+
+    style CB fill:#f0f0f0,stroke:#999
+    style WF fill:#dbeafe,stroke:#3b82f6
+    style AG fill:#d1fae5,stroke:#10b981
+    style T fill:#fef3c7,stroke:#f59e0b
+```
+
 ### 对比表
 
 | 特性 | Chatbot | Workflow | Agent |
@@ -121,6 +147,22 @@ Agent 自主决策：
 ## 1.3 AI Agent 的核心能力
 
 一个完整的 AI Agent 通常包含 5 个核心模块：
+
+```mermaid
+graph TD
+    AG[🤖 AI Agent] --> LLM[🧠 LLM 大脑\n理解意图 · 决策行动]
+    AG --> TOOLS[⚡ Tools 手\n文件 · 代码 · 搜索]
+    AG --> MEM[💾 Memory 记忆\n短期 · 长期]
+    AG --> PLAN[📋 Planning 规划\nReAct · 任务分解]
+    AG --> LOOP[🔄 Execution Loop\n驱动整体运行]
+
+    style AG fill:#7c3aed,color:#fff,stroke:#5b21b6
+    style LLM fill:#dbeafe,stroke:#3b82f6
+    style TOOLS fill:#d1fae5,stroke:#10b981
+    style MEM fill:#fce7f3,stroke:#ec4899
+    style PLAN fill:#fef3c7,stroke:#f59e0b
+    style LOOP fill:#fee2e2,stroke:#ef4444
+```
 
 ### 1. LLM（大模型）
 

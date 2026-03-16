@@ -55,6 +55,31 @@ opencode/
 
 **最重要的包是 `packages/opencode`**。它是整个系统的核心，其他包要么是它的客户端（app、desktop），要么是它的工具链（ui、sdk）。
 
+**模块依赖关系：**
+
+```mermaid
+graph TD
+    CLI[📟 CLI\npackages/opencode] --> SERVER[🖥 Server\nHTTP API :4096]
+    APP[🌐 Web App\npackages/app] --> SERVER
+    DESKTOP[🖥 Desktop\nTauri / packages/desktop] --> SERVER
+    VSCODE[📦 VSCode 扩展\nsdks/vscode] --> SERVER
+
+    SERVER --> AGENT[🤖 Agent\nagent/agent.ts]
+    AGENT --> SESSION[📋 Session\nsession/processor.ts]
+    SESSION --> LLM[🧠 LLM\nsession/llm.ts]
+    SESSION --> TOOLS[⚡ Tools\ntool/registry.ts]
+    SESSION --> DB[(💾 SQLite\ndrizzle ORM)]
+    LLM --> PROVIDER[🔌 Provider\nprovider/]
+    PROVIDER --> CLAUDE[Claude]
+    PROVIDER --> GPT[GPT-4o]
+    PROVIDER --> GEMINI[Gemini]
+    PROVIDER --> LOCAL[本地模型\nOllama...]
+
+    style CLI fill:#7c3aed,color:#fff
+    style SERVER fill:#1d4ed8,color:#fff
+    style AGENT fill:#065f46,color:#fff
+```
+
 ---
 
 ## 3.3 packages/opencode：核心包详解
@@ -273,6 +298,27 @@ packages/opencode/src/storage/
 - **会话恢复**：关掉重开，历史仍在
 - **多端同步**：TUI 和 Web 看到同一份数据
 - **事件回放**：新连接的客户端可以获取历史事件流
+
+```mermaid
+sequenceDiagram
+    participant C as CLI/Web/Desktop
+    participant S as Server (HTTP)
+    participant P as processor.ts
+    participant L as LLM
+    participant T as Tool
+
+    C->>S: POST /session/{id}/message
+    S->>P: session.chat(message)
+    P->>L: streamText(messages, tools)
+    L-->>P: text-delta（流式文字）
+    P-->>C: SSE 事件推送
+    L-->>P: tool-call
+    P->>T: tool.execute(args)
+    T-->>P: tool result
+    P->>L: 携带 tool result 继续
+    L-->>P: finish_reason: stop
+    P-->>C: SSE 完成事件
+```
 
 ---
 

@@ -20,7 +20,7 @@ description: 深入 OpenCode 工具系统——Tool.define 抽象、注册表过
 
 每个工具在 OpenCode 里都是一个 `Tool.Info` 对象。看 `tool/tool.ts` 的定义：
 
-```typescript
+```typescript{2,5,6}
 // packages/opencode/src/tool/tool.ts
 export namespace Tool {
   export interface Info<Parameters extends z.ZodType = z.ZodType> {
@@ -49,6 +49,29 @@ export namespace Tool {
 - **`parameters`**：Zod schema，定义参数类型，同时自动生成 JSON Schema 给 LLM
 
 `init` 是延迟初始化——工具在被注册时不立即初始化，而是在每次会话开始时按需初始化。这让工具可以访问运行时上下文（如当前 Agent 配置）。
+
+**工具执行完整流程：**
+
+```mermaid
+sequenceDiagram
+    participant L as 🧠 LLM
+    participant P as processor.ts
+    participant R as Tool Registry
+    participant T as Tool.execute()
+
+    L-->>P: tool_call { name, args }
+    P->>R: registry.get(name)
+    R-->>P: Tool.Info 对象
+    P->>P: 检查权限
+    alt 权限不足
+        P-->>L: 错误: 权限拒绝
+    else 权限通过
+        P->>T: execute(args, ctx)
+        T-->>P: { title, output, metadata }
+        P->>P: 截断超长输出
+        P-->>L: tool_result { content }
+    end
+```
 
 ### Tool.define：创建工具的工厂函数
 

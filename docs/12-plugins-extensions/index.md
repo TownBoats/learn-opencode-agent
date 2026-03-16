@@ -45,6 +45,22 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
   ]"
 />
 
+```mermaid
+graph LR
+    subgraph 插件生命周期
+        DISC[发现\n配置文件读取] --> LOAD[加载\nimport 模块]
+        LOAD --> INIT[初始化\ninit 钩子]
+        INIT --> ACTIVE[激活\n注册工具/命令]
+        ACTIVE --> USE[运行时\n响应调用]
+        USE --> DEINIT[销毁\ndeinit 钩子]
+    end
+
+    CONFIG[config.json\nplugins 字段] --> DISC
+    ACTIVE --> TOOL_REG[工具注册表\ntool/registry.ts]
+    ACTIVE --> CMD_REG[命令注册\ncli/cmd/]
+    ACTIVE --> HOOK_REG[钩子系统\nevent bus]
+```
+
 ## 核心概念速览
 
 如果你是 Agent 开发初学者，这一篇最重要的目标不是背概念，而是先分清楚 OpenCode 里几种扩展方式各自负责什么：

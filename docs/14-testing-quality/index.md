@@ -45,6 +45,24 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
   ]"
 />
 
+```mermaid
+graph TB
+    subgraph 测试金字塔
+        E2E[E2E 测试\nPlaywright\n50+ 用例\n速度慢 · 覆盖用户路径]
+        INT[集成测试\nBun Test\n真实数据库/文件系统]
+        UNIT[单元测试\nBun Test\n100+ 用例\n速度快 · 覆盖逻辑细节]
+    end
+
+    E2E -.->|最少| E2E
+    UNIT -.->|最多| UNIT
+
+    UNIT --> TOOLS[tool/*.test.ts]
+    UNIT --> SESSION[session/*.test.ts]
+    UNIT --> PROVIDER[provider/*.test.ts]
+    INT --> DB[数据库集成测试]
+    E2E --> UI_TEST[packages/app/e2e/]
+```
+
 ## 核心概念速览
 
 当前仓库的测试体系可以先分成三层来看：

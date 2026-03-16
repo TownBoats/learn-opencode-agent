@@ -46,6 +46,25 @@ const stream = LLM.stream({ model, messages, tools, system })
 // 不管底层是 Claude/GPT/Gemini，接口完全一致
 ```
 
+**Provider 抽象层架构：**
+
+```mermaid
+graph TB
+    SESSION[session/processor.ts] -->|Provider.getModel()| LAYER[Provider 抽象层]
+
+    LAYER --> AI_SDK[Vercel AI SDK]
+
+    AI_SDK --> CLAUDE[Anthropic Claude\nanthropic-ai/sdk]
+    AI_SDK --> OPENAI[OpenAI GPT\nopenai SDK]
+    AI_SDK --> GOOGLE[Google Gemini\n@ai-sdk/google]
+    AI_SDK --> LOCAL[本地模型\nOllama / LMStudio]
+    AI_SDK --> CUSTOM[自定义 OpenAI 兼容\nbaseURL 配置]
+
+    style SESSION fill:#1d4ed8,color:#fff
+    style LAYER fill:#7c3aed,color:#fff
+    style AI_SDK fill:#065f46,color:#fff
+```
+
 ---
 
 ## 6.2 Provider.Model：模型的完整描述
@@ -102,6 +121,19 @@ capabilities: z.object({
 - `reasoning: true` → 在 System Prompt 里添加激活扩展思维的指令
 - `attachment: false` → 用户上传图片时提示"当前模型不支持图片输入"
 - `interleaved: true` → 允许模型在工具调用中间穿插推理过程
+
+```mermaid
+graph LR
+    CAP[模型能力检测] --> IMG{支持图像?}
+    IMG -->|是| VISION[启用视觉功能]
+    IMG -->|否| NOVISION[禁用视觉上传]
+    CAP --> CTX{上下文窗口}
+    CTX -->|大| FULL[保留完整历史]
+    CTX -->|小| TRIM[压缩/截断历史]
+    CAP --> TOOL{支持工具调用?}
+    TOOL -->|是| TOOLS[启用工具系统]
+    TOOL -->|否| NOTOOL[纯文本模式]
+```
 
 ### 成本信息
 

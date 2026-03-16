@@ -12,6 +12,26 @@ description: 深入 OpenCode TUI 实现——SolidJS 响应式终端渲染、Pro
 
 传统 CLI 工具的交互模式是"输入命令 → 打印文字 → 结束"。OpenCode 的 TUI 不是这样的——它是一个**持续运行的终端应用**，实时更新界面、支持多会话切换、显示工具执行进度，更像一个轻量 IDE 而不是命令行脚本。
 
+```mermaid
+graph TD
+    APP[TUI Application\nBubbleTea / Ink] --> LAYOUT[Layout 布局]
+    LAYOUT --> SIDEBAR[侧边栏\n会话列表]
+    LAYOUT --> MAIN[主区域]
+    LAYOUT --> STATUS[状态栏]
+
+    MAIN --> HISTORY[消息历史\n滚动视图]
+    MAIN --> TOOLVIEW[工具调用\n实时展示]
+    MAIN --> INPUT[输入框\n多行编辑]
+
+    HISTORY --> USER_MSG[用户消息]
+    HISTORY --> ASST_MSG[Assistant 消息]
+    TOOLVIEW --> TOOL_CALL[工具调用卡片]
+    TOOLVIEW --> TOOL_RESULT[工具结果卡片]
+
+    style APP fill:#7c3aed,color:#fff
+    style MAIN fill:#1d4ed8,color:#fff
+```
+
 ---
 
 ## 8.1 为什么是 TUI，不是简单 CLI

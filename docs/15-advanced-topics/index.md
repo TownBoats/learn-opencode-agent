@@ -45,6 +45,35 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
   ]"
 />
 
+```mermaid
+mindmap
+  root((OpenCode\n高级主题))
+    性能优化
+      上下文压缩
+        只保留关键消息
+        总结旧对话
+      并行工具调用
+        多工具同时执行
+        减少等待时间
+      流式输出
+        SSE 实时推送
+        首字节时间最短
+    安全与权限
+      工具权限分级
+        只读 / 读写 / 危险
+      用户确认机制
+        高危操作暂停
+      沙箱执行
+        隔离 bash 命令
+    可扩展性
+      MCP 协议
+        第三方工具接入
+      插件系统
+        自定义工具/命令
+      多 Agent 协作
+        Primary + Subagent
+```
+
 ## 核心概念速览
 
 如果前十四篇是在回答“OpenCode 是怎么做出来的”，最后这一篇更想回答：

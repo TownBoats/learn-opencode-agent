@@ -45,6 +45,38 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
   ]"
 />
 
+```mermaid
+graph TB
+    subgraph 本地模式
+        LOCAL_CLI[CLI 本地运行\nbun dev]
+    end
+
+    subgraph 自托管模式
+        SELF_SERVER[OpenCode Server\nDocker / VPS]
+        SELF_WEB[Web App]
+        SELF_WEB --> SELF_SERVER
+    end
+
+    subgraph 云端模式 SST + Cloudflare
+        CF_WORKER[Cloudflare Worker\n边缘计算]
+        CF_KV[Cloudflare KV\n会话存储]
+        CF_D1[Cloudflare D1\nSQLite 数据库]
+        CF_WORKER --> CF_KV
+        CF_WORKER --> CF_D1
+    end
+
+    USER[开发者] --> LOCAL_CLI
+    USER --> SELF_WEB
+    USER --> CF_WORKER
+
+    LOCAL_CLI --> LLM_API[LLM API\nAnthropic / OpenAI / ...]
+    SELF_SERVER --> LLM_API
+    CF_WORKER --> LLM_API
+
+    style CF_WORKER fill:#f97316,color:#fff
+    style SELF_SERVER fill:#1d4ed8,color:#fff
+```
+
 ## 核心概念速览
 
 这一篇最容易写偏的地方，是把 OpenCode 误写成“一个部署到 Cloudflare 的 AI 工具”。

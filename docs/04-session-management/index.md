@@ -39,6 +39,21 @@ Session
     ]
 ```
 
+**Session 生命周期：**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Created : 用户发送消息
+    Created --> Running : processor 启动循环
+    Running --> ToolCalling : LLM 返回 tool_call
+    ToolCalling --> Running : 工具执行完毕，结果加入历史
+    Running --> Completed : LLM 返回 stop
+    Running --> Error : 工具执行失败 / 超出步骤上限
+    Completed --> Running : 用户发送下一条消息
+    Completed --> [*] : 会话结束
+    Error --> Running : 用户重试
+```
+
 ### Message 的角色划分
 
 每条消息有两种角色：
@@ -148,6 +163,31 @@ type ToolState =
 ---
 
 ## 5.3 执行循环：processor.ts 深度解析
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant PR as processor.ts
+    participant LLM as LLM
+    participant T as Tool
+
+    U->>PR: chat(userMessage)
+    PR->>PR: messages.push(userMsg)
+
+    loop 执行循环 (max 50步)
+        PR->>LLM: streamText(messages, tools, system)
+        alt finish_reason = tool-calls
+            LLM-->>PR: tool_call[]
+            PR->>T: executeTool(name, args)
+            T-->>PR: result
+            PR->>PR: messages.push(toolResult)
+        else finish_reason = stop
+            LLM-->>PR: text
+            PR->>PR: messages.push(assistantMsg)
+            PR-->>U: 完成
+        end
+    end
+```
 
 ### 整体结构
 

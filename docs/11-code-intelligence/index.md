@@ -13,6 +13,30 @@ description: LSP 客户端的工程实现：懒加载客户端管理、诊断信
 
 **2. 精确的代码导航**：AI 需要理解"这个函数在哪里定义"、"哪些地方调用了这个方法"、"这个接口有哪些实现"。LSP 提供的 `goToDefinition`、`findReferences`、`goToImplementation` 等操作，比文本搜索更精确，不会被字符串巧合误导。
 
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant OC as OpenCode Agent
+    participant LSP as LSP Client
+    participant LS as Language Server
+    participant FS as 文件系统
+
+    U->>OC: 修改文件 foo.ts
+    OC->>FS: 写入文件
+    OC->>LSP: didOpen / didChange
+    LSP->>LS: 发送文档变更
+    LS-->>LSP: 诊断信息 (errors/warnings)
+    LSP-->>OC: publishDiagnostics
+    OC->>OC: 检查是否有错误
+    alt 有错误
+        OC->>LSP: hover / definition 请求
+        LSP->>LS: 查询类型/定义
+        LS-->>LSP: 类型信息
+        LSP-->>OC: 上下文增强
+        OC->>U: 附带代码上下文的回复
+    end
+```
+
 ## LSP 子系统的整体架构
 
 ```
