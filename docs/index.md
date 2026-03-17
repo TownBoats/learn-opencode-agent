@@ -9,6 +9,9 @@ hero:
     - theme: brand
       text: 开始阅读
       link: /00-what-is-ai-agent/index
+    - theme: brand
+      text: Star 支持本书
+      link: https://github.com/qqzhangyanhua/learn-opencode-agent
     - theme: alt
       text: 阅读地图
       link: /reading-map

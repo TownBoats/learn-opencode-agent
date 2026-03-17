@@ -727,3 +727,6 @@ assistant = client.beta.assistants.create(
     }
   ]"
 />
+
+
+<StarCTA />

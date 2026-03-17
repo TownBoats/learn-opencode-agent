@@ -769,3 +769,6 @@ new sst.cloudflare.x.SolidStart("Console", {
     }
   ]"
 />
+
+
+<StarCTA />

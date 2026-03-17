@@ -12,6 +12,7 @@ import ProviderFallback from './components/ProviderFallback.vue'
 import WorkflowVsAgent from './components/WorkflowVsAgent.vue'
 import LspHover from './components/LspHover.vue'
 import ConnectionGate from './components/ConnectionGate.vue'
+import StarCTA from './components/StarCTA.vue'
 import './custom.css'
 
 export default {
@@ -28,5 +29,6 @@ export default {
     app.component('WorkflowVsAgent', WorkflowVsAgent)
     app.component('LspHover', LspHover)
     app.component('ConnectionGate', ConnectionGate)
+    app.component('StarCTA', StarCTA)
   }
 } satisfies Theme

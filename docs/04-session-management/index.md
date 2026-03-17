@@ -796,3 +796,6 @@ Bus                 ← 事件广播：实时通知所有 UI 客户端
     { label: '上下文压缩', path: 'packages/opencode/src/session/summary.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/summary.ts' },
   ]"
 />
+
+
+<StarCTA />

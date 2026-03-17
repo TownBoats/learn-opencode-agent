@@ -677,3 +677,6 @@ MCP 集成的三层结构：
     { label: '工具注册表（MCP 工具注入点）', path: 'packages/opencode/src/tool/registry.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/tool/registry.ts' },
   ]"
 />
+
+
+<StarCTA />

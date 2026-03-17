@@ -796,3 +796,6 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
     }
   ]"
 />
+
+
+<StarCTA />

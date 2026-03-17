@@ -521,3 +521,6 @@ packages/opencode/test 验证核心运行时
     }
   ]"
 />
+
+
+<StarCTA />

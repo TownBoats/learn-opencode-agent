@@ -676,3 +676,6 @@ OpenCode 多端 UI 的核心架构决策：
     }
   ]"
 />
+
+
+<StarCTA />

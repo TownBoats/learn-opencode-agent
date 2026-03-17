@@ -668,3 +668,6 @@ Provider 层的三层结构：
     { label: '模型同步', path: 'packages/opencode/src/provider/sync.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/sync.ts' },
   ]"
 />
+
+
+<StarCTA />
