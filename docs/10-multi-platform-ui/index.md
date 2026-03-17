@@ -609,6 +609,40 @@ OpenCode 多端 UI 的核心架构决策：
 
 ---
 
+## 常见误区
+
+### 误区1：桌面应用（Tauri）和 Web 应用是两套代码，维护成本翻倍
+
+**错误理解**：`packages/desktop` 是独立的桌面应用，需要单独维护和 Web 不同的 UI 和逻辑。
+
+**实际情况**：桌面应用的 UI 和 Web 应用共享同一套 `packages/app` 代码——通过 Tauri 的 WebView 渲染相同的 SolidJS 组件。两者的区别通过 `Platform` 接口抽象：桌面端提供 `Platform.open`（打开原生文件选择器）等原生能力，Web 端提供 Web API 实现。业务代码完全不感知运行环境。
+
+### 误区2：16ms 批处理窗口会让用户感觉到延迟，影响实时体验
+
+**错误理解**：把 SSE 事件合并成 16ms 批次处理，用户会看到 16ms 的延迟，实时性变差。
+
+**实际情况**：16ms 对应一帧（60fps），在感知上是即时的。批处理的价值在于将"每个 token 触发一次 setState"合并成"每帧最多更新一次"，避免 token 风暴导致的 UI 重渲染（LLM 高速输出时每秒可能产生几百个 text-delta 事件）。批处理后实际效果是流畅的流式显示，而不是卡顿。
+
+### 误区3：`ConnectionGate` 只是显示加载界面的 UI 组件，没有业务逻辑
+
+**错误理解**：连接守卫只是在服务器还没准备好时显示一个 loading 界面，没有复杂逻辑。
+
+**实际情况**：`connection-gate.tsx` 实现了健康检查轮询、连接失败重试、1.2 秒最短动画时长（防止启动太快导致界面闪烁）等逻辑。对于 Tauri 桌面端，它还要等待 sidecar 进程完全启动并绑定到端口，时序控制不对会导致客户端连接到一个还没就绪的服务器。
+
+### 误区4：Tauri Sidecar 是桌面端独有的特性，只有打包后才能用
+
+**错误理解**：Sidecar（把 `opencode` 服务端打包进 Tauri 应用）只在 `tauri build` 后的产物里才有，开发时不用管它。
+
+**实际情况**：开发模式下（`tauri dev`），Sidecar 仍然会被启动——`packages/desktop/src-tauri/tauri.conf.json` 里配置了 sidecar 路径，Tauri 在开发模式下也会通过这个配置拉起 `opencode` 进程。这意味着桌面开发时你需要先构建 `packages/opencode`，否则 sidecar 找不到可执行文件。
+
+### 误区5：SolidJS 的 Store 是全局状态，所有组件共享同一份数据
+
+**错误理解**：`SyncProvider` 里的 SolidJS Store 是全局单例，整个应用共享一份 messages 状态。
+
+**实际情况**：Store 通过 Context 传递，每个 `SyncProvider` 实例维护自己的状态。不同的会话（Session）对应不同的 Provider 实例，各自维护独立的消息列表。组件通过 `useContext` 获取最近的 Provider，而不是访问全局变量。这使得多个会话可以并行存在而不互相干扰。
+
+---
+
 <SourceSnapshotCard
   title="第11章源码快照"
   description="这一章的核心是 GlobalSDKProvider 的事件批处理和 Platform 抽象：16ms 批处理窗口如何防止 token 风暴，以及 Tauri Sidecar 如何让桌面端复用 TypeScript 业务代码。"

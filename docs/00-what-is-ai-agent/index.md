@@ -203,12 +203,13 @@ Agent 的"大脑"，负责：
 - 生成回复内容
 
 ```typescript
-// 伪代码
+// 伪代码：LLM 是一个无状态的推理函数，输入消息数组，输出响应
 const response = await llm.chat({
   messages: [
-    { role: "user", content: "帮我重构这个函数" }
+    { role: "user", content: "帮我重构这个函数" }  // 用户的原始请求
   ]
 })
+// LLM 只能生成文本，不能执行操作——操作由 Agent 框架负责
 ```
 
 ### 2. Tools（工具调用）
@@ -218,9 +219,9 @@ Agent 的"手"，可以执行实际操作：
 ```typescript
 const tools = [
   {
-    name: "read_file",
-    description: "读取文件内容",
-    parameters: { path: "string" }
+    name: "read_file",           // LLM 用这个名字来决定调用哪个工具
+    description: "读取文件内容",  // 描述极为关键——LLM 根据这句话判断何时使用
+    parameters: { path: "string" }  // Zod/JSON Schema 定义参数，LLM 据此填写参数
   },
   {
     name: "write_file",
@@ -233,6 +234,7 @@ const tools = [
     parameters: { query: "string" }
   }
 ]
+// 工具列表会作为 JSON Schema 注入 LLM 的请求，让 LLM 知道"手"能做什么
 ```
 
 ### 3. Memory（记忆）
@@ -249,19 +251,21 @@ Agent 的"记忆"，分为两种：
 - 知识库
 
 ```typescript
-// 短期记忆
+// 短期记忆：当前会话的消息历史，每次调用 LLM 时完整传入
 const chatHistory = [
   { role: "user", content: "读取 config.json" },
-  { role: "assistant", content: "已读取，内容是..." },
-  { role: "user", content: "修改 port 为 8080" }  // Agent 知道要修改哪个文件
+  { role: "assistant", content: "已读取，内容是..." },  // 之前的回复也在历史里
+  { role: "user", content: "修改 port 为 8080" }  // LLM 能知道"上次读了哪个文件"
 ]
+// 所谓"记忆"不是真的存储，而是每次把历史消息全部重发给 LLM
 
-// 长期记忆
+// 长期记忆：跨会话的持久化数据，需要显式查询才能注入上下文
 const userPreferences = {
-  codeStyle: "functional",
-  testFramework: "vitest",
-  language: "TypeScript"
+  codeStyle: "functional",    // 用 Functional 风格，而非面向对象
+  testFramework: "vitest",    // 测试框架偏好
+  language: "TypeScript"      // 首选语言
 }
+// 长期记忆不会自动出现在 LLM 的上下文里，需要代码查询后显式注入
 ```
 
 ### 4. Planning（任务规划）
@@ -297,6 +301,32 @@ while (任务未完成) {
   3. Observe（观察）：查看执行结果
   4. Reflect（反思）：判断是否需要调整计划
 }
+```
+
+**Agent 执行循环流程图：**
+
+```mermaid
+flowchart TD
+    A[用户输入消息] --> B[构建 messages 数组\n包含历史 + 工具定义]
+    B --> C[调用 LLM]
+    C --> D{finish_reason?}
+    D -->|tool-calls| E[解析工具调用\n获取 name + args]
+    E --> F{权限检查}
+    F -->|拒绝| G[返回权限错误\n加入 messages]
+    F -->|允许| H[执行工具\ntool.execute\(args\)]
+    H --> I[获取工具结果]
+    I --> J[将结果加入 messages\nrole: tool]
+    J --> C
+    D -->|stop| K[LLM 输出最终文字]
+    K --> L[保存到数据库]
+    L --> M[返回给用户]
+    G --> C
+
+    style A fill:#dbeafe,stroke:#3b82f6
+    style C fill:#d1fae5,stroke:#10b981
+    style D fill:#fef3c7,stroke:#f59e0b
+    style H fill:#f3e8ff,stroke:#7c3aed
+    style M fill:#d1fae5,stroke:#10b981
 ```
 
 ---
@@ -627,6 +657,40 @@ assistant = client.beta.assistants.create(
 - Execution Loop 如何运转
 
 这些概念将为后续阅读 OpenCode 源码打下基础。
+
+---
+
+## 常见误区
+
+### 误区1：AI Agent 就是 AI，是有"智能"的程序
+
+**错误理解**：Agent 本身是一个具备智能的实体，它会"思考"、"理解"、"学习"。
+
+**实际情况**：Agent 是一个工程框架，真正具备智能的是其中的 LLM。`processor.ts` 里的 `while` 循环本身没有任何智能——它只是不断地把消息数组发给 LLM，再把结果加回数组。LLM 才是决策者，Agent 框架只是它的执行环境。
+
+### 误区2：Agent 比 Workflow 更好，应该总是选 Agent
+
+**错误理解**：Agent 能自主决策，所以比固定的 Workflow 更强大，任何场景都应该用 Agent。
+
+**实际情况**：Workflow 的"固定"恰恰是优点——可预测、可审计、成本低。银行转账、表单提交这类流程不应该让 LLM 自主决策。选 Agent 的前提是任务本身需要动态决策、工具选择不确定。OpenCode 源码中，对于明确的步骤（如文件读取权限检查）用固定逻辑，只有任务规划阶段才交给 LLM 自主决策。
+
+### 误区3：Agent 的记忆是真正的"记忆"，它会越用越聪明
+
+**错误理解**：Agent 用得越久，积累的知识越多，会像人一样越来越聪明。
+
+**实际情况**：Agent 的"记忆"本质是把历史消息拼接后重新发给 LLM，并非真正的学习。每次调用 LLM 都是无状态推理。OpenCode 的长期记忆（SQLite 持久化）只是让你下次能"继续上次的对话"，LLM 本身的权重没有任何改变。
+
+### 误区4：工具越多越好，给 Agent 提供的工具应该尽可能全面
+
+**错误理解**：工具越丰富，Agent 能完成的任务越多，应该把所有可能用到的工具都注册进去。
+
+**实际情况**：工具过多会稀释 LLM 的注意力，导致选错工具或频繁切换。更重要的是安全风险——OpenCode 的权限系统（`tool/registry.ts` 中的权限过滤）正是为了限制 Agent 的工具访问范围，`bash` 这类危险工具需要显式授权，而不是默认开放。
+
+### 误区5：Agent 能完全自主完成任务，不需要人工干预
+
+**错误理解**：真正好的 Agent 应该全自动运行，不需要任何人工确认。
+
+**实际情况**：OpenCode 在执行删除文件、运行命令等高风险操作时，会暂停并等待用户确认。这不是设计缺陷，而是刻意的安全设计。完全自主的 Agent 在处理不可逆操作时风险极高，"人在回路中"（Human-in-the-loop）是生产级 Agent 系统的标准实践。
 
 ---
 

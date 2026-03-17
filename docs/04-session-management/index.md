@@ -92,6 +92,7 @@ stateDiagram-v2
 
 ```typescript
 // session/schema.ts
+// 注意：只有两种 role，没有 "tool" role——工具结果是 assistant 消息的 Part
 type MessageRole = "user" | "assistant"
 ```
 
@@ -137,13 +138,15 @@ type Part =
 ```typescript
 export const TextPart = PartBase.extend({
   type: z.literal("text"),
-  text: z.string(),
-  synthetic: z.boolean().optional(),  // true = 系统生成的文本（不是 LLM 输出的）
-  ignored: z.boolean().optional(),
+  text: z.string(),                           // LLM 输出的文字内容
+  synthetic: z.boolean().optional(),          // true 时表示系统生成，不展示给用户
+                                              // （如上下文压缩后插入的"请继续"）
+  ignored: z.boolean().optional(),            // 被标记为忽略，不传给下次 LLM 调用
   time: z.object({
-    start: z.number(),
-    end: z.number().optional(),
+    start: z.number(),                        // 第一个 token 到达的时间戳（ms）
+    end: z.number().optional(),               // 最后一个 token 到达的时间戳
   }).optional(),
+  // start/end 让 UI 能展示"生成耗时 X 秒"
 })
 ```
 
@@ -220,6 +223,10 @@ sequenceDiagram
         end
     end
 ```
+
+**messages 数组增长动画：** 每一轮 Loop 结束后，messages 里多了哪些条目、token 计数如何增长，播放一遍就能看清楚。
+
+<MessageAccumulator />
 
 ### 整体结构
 
@@ -737,6 +744,40 @@ Bus                 ← 事件广播：实时通知所有 UI 客户端
 - 模型能力描述（context window、支持的功能）如何驱动运行时决策
 - 认证机制：API Key 如何安全存储和使用
 - Vercel AI SDK 的角色：统一接口背后的实现细节
+
+---
+
+## 常见误区
+
+### 误区1：processor.ts 是一个简单的 while 循环，核心逻辑很简单
+
+**错误理解**：执行循环就是 `while(true) { callLLM(); executeTool(); }`，没有多少复杂性。
+
+**实际情况**：`processor.ts` 处理了多层复杂性：流式响应的逐块解析、step 边界管理（把多个工具调用组织为有意义的"步骤"）、事件广播（实时推送给所有连接的客户端）、权限暂停与恢复、死循环检测、上下文溢出时的自动压缩。任何一个处理不好都会导致 Agent 行为异常。
+
+### 误区2：MessageV2 的 Parts 结构是过度设计，一条消息一个字符串就够了
+
+**错误理解**：把消息拆成多个 Part（文本、思考、工具调用、工具结果）是不必要的复杂性，一个大字符串更简单。
+
+**实际情况**：Parts 设计是多端渲染的核心。TUI 需要单独展示 reasoning 部分（折叠显示思考过程）；Web 需要展示 tool-call 的 diff 视图；桌面端需要显示附件预览。如果消息是一个大字符串，每个客户端都需要自己解析。Parts 让服务端统一结构化，各端按需取用。
+
+### 误区3："死循环检测"是 OpenCode 的 Bug，正常 Agent 不需要这个
+
+**错误理解**：成熟的 Agent 不会陷入死循环，死循环检测是因为代码质量差才需要的补丁。
+
+**实际情况**：死循环是 LLM 驱动的 Agent 的固有风险——LLM 可能重复调用同一个工具、陷入"尝试-失败-重试"的循环、或者无法判断任务已完成。`processor.ts` 的 doom loop 检测（连续相同工具调用超过阈值时触发）是防御性编程的标准实践，不是缺陷的弥补。
+
+### 误区4：上下文压缩（Summary）会导致 Agent "忘记"重要信息
+
+**错误理解**：当上下文窗口满了，压缩摘要会丢失关键的工具调用结果，导致 Agent 决策错误。
+
+**实际情况**：`summary.ts` 的压缩策略是调用 LLM 自身来生成摘要——让 LLM 判断哪些内容是重要的，而不是机械地截断前面的消息。压缩后插入的合成消息包含对关键发现的总结，通常保留了决策所需的核心上下文。完整历史仍在数据库里，不是真正的删除。
+
+### 误区5：Session 和对话是一一对应的，一次任务就是一个 Session
+
+**错误理解**：每次开始一个新任务就是新的 Session，Session 就是"一次聊天"。
+
+**实际情况**：Session 是持久化的工作上下文，不是一次性对话。同一个 Session 可以在多天内持续工作，关掉重开后继续。一个 Session 还可以有多个子 Session（subagent 创建的），形成会话树。Session 的边界是"一个任务的完整生命周期"，而不是"一次连接"。
 
 ---
 

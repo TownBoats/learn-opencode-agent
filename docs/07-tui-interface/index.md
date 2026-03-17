@@ -644,6 +644,40 @@ OpenCode HTTP Server              ← 业务逻辑
 
 ---
 
+## 常见误区
+
+### 误区1：TUI 是用 ncurses 或类似的终端库直接绘制的
+
+**错误理解**：终端 UI 必然用 ncurses 或 blessed 之类的传统终端库，直接操作光标位置绘制界面。
+
+**实际情况**：OpenCode 的 TUI 用 SolidJS 声明式组件树 + `@opentui/core` 渲染层实现。开发者写的是 SolidJS 组件（`<Box>`、`<Text>`），不是光标控制序列。这让 TUI 代码和 Web 代码共享组件逻辑，两者都用 SolidJS 的响应式系统。
+
+### 误区2：TUI 通过直接函数调用和 Agent 通信，没有网络请求
+
+**错误理解**：TUI 和 Agent 在同一个进程里，直接调用函数通信，比 Web 更高效。
+
+**实际情况**：TUI 通过 HTTP 和 SSE（Server-Sent Events）与 Agent 通信，和 Web 客户端完全一样的方式——只是连接的是 `localhost:4096`。`SDKProvider` 和 `SyncProvider` 这两个 SolidJS 上下文负责维护 SDK 连接和状态同步。这是架构一致性的体现，虽然看起来"多此一举"，但让所有客户端使用同一套通信机制，大幅降低了维护成本。
+
+### 误区3：权限弹窗期间 Agent 会继续在后台工作
+
+**错误理解**：当 TUI 显示"是否允许执行这个命令？"的弹窗时，Agent 会在后台继续处理其他事情。
+
+**实际情况**：权限请求会让 `processor.ts` 的执行循环完全暂停——它在 `permission/next.ts` 的 `check()` 调用处挂起，等待一个 Promise resolve。只有当用户在 TUI 里点击"允许"或"拒绝"，服务端的执行才继续或中止。这是设计上的有意安排，确保危险操作不会在用户不知情的情况下执行。
+
+### 误区4：SolidJS 在终端环境下是一个"hack"，不是官方支持的用法
+
+**错误理解**：SolidJS 是为浏览器设计的，在终端里用它是打补丁的非官方用法，可能有各种限制。
+
+**实际情况**：SolidJS 的响应式核心是运行时无关的——它不直接操作 DOM，而是通过信号（Signal）和计算（Computed）管理状态，`@opentui/core` 提供了终端渲染器作为 DOM 的替代品。这和 React Native 用 React 渲染原生组件是同样的设计模式，是 SolidJS 架构的有意设计，不是 hack。
+
+### 误区5：TUI 的状态是独立的，和 Web/Desktop 客户端互不干扰
+
+**错误理解**：如果 TUI 和 Web 同时连接到同一个 Session，它们的状态是隔离的，互相看不到对方的操作。
+
+**实际情况**：所有客户端共享同一套服务端状态，通过 SSE 事件流实时同步。当 TUI 发送了一条消息，Web 客户端会收到同样的消息事件并更新界面；反之亦然。Bus 的广播机制保证了所有连接的客户端都能实时接收到任何状态变化。
+
+---
+
 <SourceSnapshotCard
   title="第8章源码快照"
   description="这一章的核心是理解 TUI 如何把 HTTP API 的事件流转化成终端界面的实时更新，以及 SolidJS 在非浏览器环境中如何工作。"

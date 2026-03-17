@@ -604,6 +604,40 @@ stream.write(JSON.stringify(msg))  →  响应返回
 
 ---
 
+## 常见误区
+
+### 误区1：HTTP API 服务器只在"服务器模式"下运行，本地 TUI 不启动它
+
+**错误理解**：HTTP 服务器只有执行 `opencode serve` 时才会启动，普通 `opencode` 命令直接调用业务逻辑，不经过 HTTP 层。
+
+**实际情况**：即使是普通的 TUI 模式，`opencode` 也会在本地启动 HTTP 服务器（默认端口 4096）。TUI 通过 HTTP 请求和 SSE 事件流与服务端通信。这是架构统一性的体现——所有客户端使用同一套通信协议，本地的区别只是连接 `localhost` 而不是远程地址。
+
+### 误区2：SSE 和 HTTP Stream 是同一个东西，随便用哪个都行
+
+**错误理解**：`streamSSE` 和 `stream` 都是流式传输，功能相同，可以互换使用。
+
+**实际情况**：两者用途不同。SSE（`GET /event`）是**持久连接**的事件广播，用于推送 Agent 执行过程中的实时事件（工具调用、文字片段、状态变化），一个连接可以接收多次事件。HTTP Stream（`POST /session/:id/message` 的 `stream()`）是**单次请求**的流式响应，用于传输这次请求的处理结果。前者是"订阅"，后者是"请求-流式响应"。
+
+### 误区3：OpenCode 的 API 需要手动编写 SDK，维护成本高
+
+**错误理解**：如果要在外部调用 OpenCode 的 API，需要手动阅读文档、编写 HTTP 请求代码。
+
+**实际情况**：`packages/sdk/js/` 里的 SDK 是从服务端路由定义**自动生成**的。`describeRoute` 装饰器不仅生成 OpenAPI 文档，还驱动 SDK 代码生成脚本。这意味着 API 变更后运行 `generate.ts`，SDK 会自动更新，不存在"API 和 SDK 不同步"的问题。
+
+### 误区4：mDNS 广播是可选的调试功能，生产环境应该禁用
+
+**错误理解**：mDNS 局域网服务发现是开发时用来方便找服务的，生产部署应该关掉，通过固定 IP 或域名访问。
+
+**实际情况**：mDNS 是 OpenCode 多端架构的关键基础设施。当你在本机运行 `opencode serve`，手机浏览器或局域网里的其他设备可以通过 mDNS 自动发现服务并连接，无需手动配置 IP 地址。这是团队共享 Agent 会话的核心机制，不是调试辅助。
+
+### 误区5：`NamedError` 体系只是美化错误消息，没有实质作用
+
+**错误理解**：`NamedError` 只是给错误加了个名字，方便日志阅读，对客户端处理没有帮助。
+
+**实际情况**：`NamedError` 让错误在 HTTP 层变成结构化 JSON 响应，客户端（SDK）可以用 `instanceof` 检查错误类型并做针对性处理。例如 `ForbiddenError` 触发重新认证，`NotFoundError` 触发资源刷新，`ValidationError` 显示字段级错误信息。这是类型安全的错误处理链，而不是单纯的日志美化。
+
+---
+
 <SourceSnapshotCard
   title="第9章源码快照"
   description="这一章的核心是 createApp 的中间件链：每一层如何只做一件事，以及 SSE 广播与 HTTP Stream 如何协作支撑实时 AI 交互。"

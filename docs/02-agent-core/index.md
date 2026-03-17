@@ -172,14 +172,14 @@ packages/opencode/src/index.ts
 3. 根据命令分发：`run` → TUI，`serve` → 无头服务器，`web` → Web 服务器
 
 ```typescript
-// 简化示意
+// 简化示意：yargs 解析命令行参数，分发到对应命令处理器
 let cli = yargs(hideBin(process.argv))
   .scriptName("opencode")
-  .command(RunCommand)    // opencode（默认，启动 TUI）
-  .command(ServeCommand)  // opencode serve
-  .command(WebCommand)    // opencode web
+  .command(RunCommand)    // opencode（默认，启动 TUI + 内嵌服务器）
+  .command(ServeCommand)  // opencode serve（只启动 HTTP 服务器，无 TUI）
+  .command(WebCommand)    // opencode web（启动服务器 + 打开浏览器）
 
-await cli.parse()
+await cli.parse()  // 解析参数后立即分发，不同命令有不同的服务器启动逻辑
 ```
 
 ### 第二步：进入共享服务边界
@@ -223,15 +223,18 @@ packages/opencode/src/agent/agent.ts
 
 ```typescript
 // session/system.ts（概念示意）
+// System Prompt 是动态构建的，每次会话开始时重新组装
 async function buildSystemPrompt(agentName: string, context: Context) {
-  const agent = Agent.get(agentName)  // 从 agent.ts 获取 Agent 定义
+  const agent = Agent.get(agentName)  // 从 agent.ts 获取 Agent 定义（primary/subagent）
 
   return [
-    agent.system,          // Agent 的基础行为准则
-    await getProjectContext(context),  // 当前项目信息
-    await getCustomInstructions(),     // 用户自定义指令（opencode.md）
-    getCurrentWorkingDirectory(),      // 工作目录
+    agent.system,                      // Agent 的核心行为准则（不变的基础指令）
+    await getProjectContext(context),  // 当前项目信息（语言、框架、结构等）
+    await getCustomInstructions(),     // 用户自定义指令（CLAUDE.md / opencode.md 文件内容）
+    getCurrentWorkingDirectory(),      // 当前工作目录（让 LLM 知道文件路径的根）
   ].join("\n\n")
+  // 这几部分拼接后就是 LLM 每次调用时看到的 System Prompt
+  // 越精准的 System Prompt，LLM 的决策越准确
 }
 ```
 
@@ -296,14 +299,14 @@ packages/opencode/src/tool/edit.ts
 ```typescript
 // tool/read.ts（简化示意）
 export const ReadTool = {
-  name: "read",
-  description: "读取文件内容，返回文本",
+  name: "read",                              // LLM 调用时使用这个名称
+  description: "读取文件内容，返回文本",       // LLM 根据这段文字决定何时调用
   parameters: z.object({
-    filePath: z.string().describe("要读取的文件路径"),
+    filePath: z.string().describe("要读取的文件路径"),  // Zod schema 同时生成参数校验和 JSON Schema
   }),
   async execute({ filePath }) {
-    const content = await fs.readFile(filePath, "utf-8")
-    return content
+    const content = await fs.readFile(filePath, "utf-8")  // 实际的 I/O 操作
+    return content  // 返回的内容会传回 LLM 作为 tool_result
   }
 }
 ```
@@ -528,6 +531,40 @@ index.ts → cli/cmd/run.ts
 - `registry.ts` 如何注册和过滤工具
 - `bash`、`edit`、`grep` 等核心工具的实现细节
 - 权限系统如何控制工具访问
+
+---
+
+## 常见误区
+
+### 误区1：Web UI 和 CLI 是两套独立的代码，逻辑各自实现
+
+**错误理解**：`packages/app`（Web）和 `packages/opencode`（CLI）各有自己的 Agent 逻辑，分别实现了工具调用、会话管理等功能。
+
+**实际情况**：所有业务逻辑只在 `packages/opencode` 里实现一次。`packages/app` 只是一个 HTTP 客户端——它通过 HTTP 请求调用 `opencode` 的服务端，渲染返回的数据。TUI 也是如此。这就是为什么 `packages/app` 里找不到任何工具定义或 Agent 配置的代码。
+
+### 误区2：HTTP Server 是为了"服务器部署"才有的，本地运行不需要
+
+**错误理解**：本地 CLI 运行时不需要 HTTP 服务器，服务器只在云端部署时才有意义。
+
+**实际情况**：即使是本地 TUI 模式，也会在同一进程内启动 HTTP 服务器（监听 4096 端口）。这是架构的核心选择——三端（CLI/Web/Desktop）通过同一套 HTTP 接口与 Agent 通信，本地运行的"服务器"只是监听 localhost，没有网络开销，但获得了架构一致性。
+
+### 误区3：CLAUDE.md 是 Claude 专用的，使用其他模型时没有效果
+
+**错误理解**：`CLAUDE.md` 文件是 Anthropic/Claude 的特定功能，换成 GPT 或 Gemini 后自定义指令就不生效了。
+
+**实际情况**：`CLAUDE.md`（以及 `opencode.md`）由 OpenCode 框架本身读取并注入到 System Prompt，与使用哪个 LLM 无关。`session/system.ts` 在构建提示词时会读取这些文件，然后把内容作为 System Prompt 的一部分传给任何 Provider。
+
+### 误区4：MCP 工具和内置工具在功能上有本质差异
+
+**错误理解**：MCP 工具是"外部插件"，比内置工具功能弱，有特殊限制，LLM 调用它们的方式也不同。
+
+**实际情况**：从 LLM 的角度看，MCP 工具和内置工具完全一样——它们都表现为工具调用（function call），都有 `name`、`description`、`parameters`。`registry.ts` 在组装工具列表时，MCP 工具和内置工具被平等地放入同一个数组。区别只在于内置工具在 OpenCode 进程内执行，MCP 工具通过进程间通信（stdio/HTTP）在外部进程执行。
+
+### 误区5：配置优先级最高的是 `config.json` 文件
+
+**错误理解**：`~/.config/opencode/config.json` 是最高优先级配置，其他配置都受它约束。
+
+**实际情况**：命令行参数优先级最高，其次是环境变量（`OPENCODE_*`），再次是项目级 `.opencode/config.json`，最后才是全局 `~/.config/opencode/config.json`。这意味着你可以用环境变量或命令行参数临时覆盖全局配置，这在 CI/CD 场景下非常重要。
 
 ---
 

@@ -120,19 +120,21 @@ packages/opencode/src/storage/
 数据库初始化在 `db.ts` 的 `Database.Client` 懒加载函数中完成：
 
 ```typescript
+// lazy() 确保只在第一次访问时初始化，避免启动时不必要的数据库连接
 export const Client = lazy(() => {
-  const sqlite = new BunDatabase(Path, { create: true })
+  const sqlite = new BunDatabase(Path, { create: true })  // 文件不存在时自动创建
 
-  sqlite.run("PRAGMA journal_mode = WAL")        // 写前日志，提升并发
-  sqlite.run("PRAGMA synchronous = NORMAL")      // 平衡安全与性能
-  sqlite.run("PRAGMA busy_timeout = 5000")       // 锁等待最多 5 秒
-  sqlite.run("PRAGMA cache_size = -64000")       // 页缓存 64MB
-  sqlite.run("PRAGMA foreign_keys = ON")         // 强制外键约束
-  sqlite.run("PRAGMA wal_checkpoint(PASSIVE)")   // 非阻塞 WAL 检查点
+  sqlite.run("PRAGMA journal_mode = WAL")        // WAL 模式：读写并发，崩溃安全恢复
+  sqlite.run("PRAGMA synchronous = NORMAL")      // 比 FULL 快（WAL 下足够安全）
+  sqlite.run("PRAGMA busy_timeout = 5000")       // 锁竞争时等待最多 5 秒，而不是立即报错
+  sqlite.run("PRAGMA cache_size = -64000")       // 负值表示 KB：64MB 热数据缓存
+  sqlite.run("PRAGMA foreign_keys = ON")         // SQLite 默认不检查外键，这里强制开启
+  sqlite.run("PRAGMA wal_checkpoint(PASSIVE)")   // 被动 WAL 合并：不阻塞当前操作
 
-  const db = drizzle({ client: sqlite })
-  migrate(db, entries)                           // 运行迁移
+  const db = drizzle({ client: sqlite })  // 包装成 Drizzle ORM 实例
+  migrate(db, entries)                    // 启动时自动运行所有未执行的迁移
   return db
+  // 返回的 db 对象有完整的 TypeScript 类型推导，查询结果类型安全
 })
 ```
 
@@ -630,6 +632,40 @@ OpenCode 数据持久化层的核心设计决策：
 ## 下一章预告
 
 第11章：**多端 UI 开发** — 深入 `packages/app/` 和 `packages/desktop/`，学习：SolidJS Web 应用的组件架构、Tauri 桌面端的 Rust + TypeScript 桥接、多端共享代码的策略，以及如何用同一套 HTTP API 支撑 TUI、Web 和桌面三种客户端。
+
+---
+
+## 常见误区
+
+### 误区1：SQLite 不适合生产级应用，OpenCode 用它只是因为简单
+
+**错误理解**：SQLite 是轻量级数据库，适合原型开发，真正的生产应用应该用 PostgreSQL 或 MySQL。
+
+**实际情况**：对于 OpenCode 这类本地优先（local-first）的 AI 工具，SQLite 是正确选择。单文件、零配置、写入性能足够、WAL 模式支持并发读。`db.ts` 里的 PRAGMA 配置（`journal_mode=WAL`、`foreign_keys=ON` 等）是针对高并发写入场景的优化，不是"将就"而是精心调优。对于云端部署场景，Drizzle ORM 同样支持 PostgreSQL。
+
+### 误区2：事务（Transaction）和副效应（Effect）分开执行是因为性能问题
+
+**错误理解**：`Database.effect()` 把事件发布放到事务外执行，是为了减少事务持有时间、提升性能。
+
+**实际情况**：性能不是主要原因——**正确性**才是。如果在事务内部发布 Bus 事件，订阅者可能立即查询数据库，但此时事务还未提交，查询到的是旧数据（"通知先于数据"竞态）。`effect()` 确保事务完全提交后才执行副效应，消除了这个竞态条件。这是经典的"事务性消息传递"（transactional outbox）模式的简化实现。
+
+### 误区3：Part 的 `data` 字段存 JSON 是因为 TypeScript 不支持多态 SQL 列
+
+**错误理解**：把所有 Part 类型的数据压缩成一个 JSON blob 是技术限制导致的，如果能用多表继承会更好。
+
+**实际情况**：JSON blob 是有意的权衡。Part 类型有十几种（text、tool-call、tool-result、reasoning、file 等），如果每种一张表需要维护复杂的 JOIN 逻辑。JSON 策略牺牲了单字段查询能力，换来了 schema 灵活性——新增 Part 类型不需要数据库迁移，只需修改 TypeScript 类型。`id`、`session_id` 等高频查询字段仍然是独立列，保证了主要查询路径的性能。
+
+### 误区4：KV 存储（storage.ts）和 SQLite 数据库是互相替代的两个系统
+
+**错误理解**：`storage.ts` 的 JSON 文件 KV 存储和 SQLite 数据库都是持久化手段，选一个用就行。
+
+**实际情况**：两者存储不同性质的数据。SQLite 存储**结构化、可查询**的数据（会话、消息、Parts），需要按条件筛选、排序、关联查询。JSON KV 存储配置类**非结构化、全量读写**的数据（API key、用户偏好、模型设置），每次操作都读完整文件，不需要 SQL 查询能力。文件锁（`lockfile`）防止并发写入冲突。
+
+### 误区5：数据库迁移只在版本升级时需要，日常开发不用关心
+
+**错误理解**：数据库迁移是发布新版本时才运行一次的操作，开发过程中可以忽略。
+
+**实际情况**：OpenCode 在**每次启动时**自动运行迁移（`db.ts` 里的 `migrate()` 调用）。这意味着开发时修改 schema 后，下次启动就会自动迁移，不需要手动执行脚本。同时，从旧版 JSON 文件格式迁移到 SQLite 的逻辑（`json-migration.ts`）也在启动时自动检测和执行，保证升级后历史数据不丢失。
 
 ---
 

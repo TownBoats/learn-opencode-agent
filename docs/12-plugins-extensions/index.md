@@ -731,6 +731,40 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
 
 ---
 
+## 常见误区
+
+### 误区1：Skill 是一种特殊的工具，通过工具调用触发
+
+**错误理解**：Skill 是注册在工具注册表里的工具，LLM 通过 `skill_xxx` 这样的工具调用来使用 Skill。
+
+**实际情况**：Skill 是**提示词扩展**，不是工具。用户在消息里写 `/skill-name`，系统把对应 Skill 的 Markdown 内容注入到当前消息的上下文，作为指令给 LLM 参考。Skill 不参与工具调用机制，它只是把可复用的提示词片段以文件形式管理起来，避免用户每次手动粘贴同样的指令。
+
+### 误区2：自定义 Agent 需要修改 OpenCode 源码才能生效
+
+**错误理解**：想让 Agent 有不同的行为（比如专门做代码审查的 Agent），需要 fork OpenCode 仓库修改 `agent/agent.ts`。
+
+**实际情况**：Agent 配置支持通过 `config.json` 文件自定义。用户可以在配置里定义 Agent 的 system prompt、默认模型、工具权限等，不需要修改源码。更简单的方案是使用 `CLAUDE.md` / `opencode.md` 文件，这些文件的内容会自动注入所有 Agent 的 System Prompt，实现项目级的行为定制。
+
+### 误区3：Command（命令）就是 Bash 脚本，和 Agent 工具调用无关
+
+**错误理解**：OpenCode 的 Command 只是预定义的终端命令快捷方式，是 shell 别名的替代品，和 AI 无关。
+
+**实际情况**：Command 可以包含 AI 提示词——当用户执行一个 Command，它可以把预定义的提示词填入对话，然后让 Agent 执行对应的任务。Command 是"把常用 AI 任务封装成快捷方式"的机制，不是纯 shell 脚本。这让团队可以共享标准化的 AI 工作流（代码审查、发布前检查等）。
+
+### 误区4：VSCode 扩展是 OpenCode 的"正式版本"，TUI 是辅助工具
+
+**错误理解**：`sdks/vscode` 里的 VSCode 扩展是 OpenCode 面向专业用户的主力产品，TUI 只是命令行用户的备选。
+
+**实际情况**：VSCode 扩展和 TUI 在架构上是对等的——都是 OpenCode 服务端的客户端，通过 HTTP API 和 SSE 通信。VSCode 扩展是为了让习惯在 IDE 里工作的用户不需要切换到终端。OpenCode 的核心是服务端（`packages/opencode`），各种客户端（TUI/Web/Desktop/VSCode）是平等的展示层。
+
+### 误区5：Plugin 系统支持用任何语言编写扩展
+
+**错误理解**：OpenCode 的插件系统是通用的，可以用 Python、Go 等任何语言编写插件，通过标准接口接入。
+
+**实际情况**：OpenCode 的自定义工具（通过 `~/.config/opencode/tool/` 目录加载）只支持 JavaScript/TypeScript 文件（`.js/.ts`）——因为它们在 Bun 进程内直接 `import` 执行，不是独立进程。如果需要用其他语言编写扩展，应该通过 MCP（Model Context Protocol）实现 MCP Server，这才是语言无关的扩展接口。
+
+---
+
 <SourceSnapshotCard
   title="第13章源码快照"
   description="这一章先把扩展手段分清楚：插件、Skill、命令和编辑器扩展各自从哪条入口进入系统，以及它们最后怎样汇入统一能力边界。"

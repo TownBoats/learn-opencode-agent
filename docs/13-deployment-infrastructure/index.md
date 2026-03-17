@@ -704,6 +704,40 @@ new sst.cloudflare.x.SolidStart("Console", {
 
 ---
 
+## 常见误区
+
+### 误区1：SST 是 OpenCode 的运行时框架，类似于 Express 或 Fastify
+
+**错误理解**：SST（Serverless Stack Toolkit）是 OpenCode 服务端的核心框架，负责处理 HTTP 请求、路由、中间件等运行时逻辑。
+
+**实际情况**：SST 是**基础设施编排工具**，不是运行时框架。它负责声明式地描述和部署 Cloudflare Workers、KV 存储、R2 对象存储等云资源，类似 Terraform 但用 TypeScript 编写。OpenCode 的 HTTP 服务器是 Hono，业务逻辑在 `packages/opencode`，SST 管理的是这些代码运行所需的**云资源**，两者职责完全不同。
+
+### 误区2：`packages/console` 是 OpenCode CLI 的控制台界面，就是 TUI 的另一个名字
+
+**错误理解**：`packages/console` 包含的是 TUI（终端用户界面）的代码，和 `packages/app` 是同类东西。
+
+**实际情况**：`packages/console` 是一个**独立的 Web 产品**——OpenCode 的云端控制平面（dashboard）。它有自己的前端（`console/app`）、后端 API（`console/core`、`console/function`）和邮件服务（`console/mail`），管理用户账号、订阅、工作区和使用量统计。它和本地 CLI 的 TUI 是完全不同的产品，只是共享同一个仓库。
+
+### 误区3：本地部署和云端部署的功能是一样的，只是运行环境不同
+
+**错误理解**：把 OpenCode 部署到云端后，功能和本地运行完全相同，只是换了个运行位置。
+
+**实际情况**：本地模式和云端模式有功能差异。云端部署（`opencode serve`）主要用于团队共享——多个用户可以连接到同一个 Agent 实例，但本地文件系统访问、执行本地命令等功能受限于服务器环境。`console` 层增加了用户认证、计费、工作区隔离等本地模式没有的能力。
+
+### 误区4：Cloudflare Workers 是 OpenCode 服务端的运行环境
+
+**错误理解**：OpenCode 的核心服务端（`packages/opencode`）运行在 Cloudflare Workers 上，利用边缘计算提升响应速度。
+
+**实际情况**：`packages/opencode` 运行在**标准 Bun/Node.js 进程**里，需要访问本地文件系统（读写文件、执行命令），这和 Cloudflare Workers 的无状态、无文件系统的边缘运行时完全不兼容。Cloudflare 在这里用于部署 `packages/console` 的 Web 界面和一些云端 API 函数，不是核心 Agent 逻辑的运行环境。
+
+### 误区5：只要设置了 `OPENCODE_SERVER_PASSWORD`，远程访问就是安全的
+
+**错误理解**：给 OpenCode 服务器设置密码后，就可以安全地将其暴露在公网上，供远程访问。
+
+**实际情况**：`OPENCODE_SERVER_PASSWORD` 只是基础的 HTTP Bearer Token 认证，防止未授权访问。但 OpenCode 服务端能执行任意 shell 命令（通过 `bash` 工具）、读写本地文件，如果暴露在公网，攻击面极大。生产级的远程访问应该通过 VPN、SSH 隧道或零信任网络访问（ZTNA）等更强的安全机制保护，不能只依赖密码。
+
+---
+
 <SourceSnapshotCard
   title="第14章源码快照"
   description="这一章先抓 OpenCode 不是单机 CLI 这件事：本地运行时、云端 API、控制台和 SST 基础设施是怎样被拆层并一起交付的。"

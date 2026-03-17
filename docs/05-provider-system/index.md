@@ -72,9 +72,10 @@ if (provider === "anthropic") {
 
 ```typescript
 // 有抽象：session 层只看到统一接口
-const model = await Provider.getModel(providerID, modelID)
+const model = await Provider.getModel(providerID, modelID)  // 返回 Vercel AI SDK 兼容对象
 const stream = LLM.stream({ model, messages, tools, system })
 // 不管底层是 Claude/GPT/Gemini，接口完全一致
+// Vercel AI SDK 在幕后处理了消息格式转换、鉴权、流式解析等差异
 ```
 
 **Provider 抽象层架构：**
@@ -126,23 +127,25 @@ export const Model = z.object({
 这是 Provider 层最重要的字段——能力标志直接驱动运行时的行为：
 
 ```typescript
+// capabilities 字段是运行时决策的数据源，不是注释
 capabilities: z.object({
-  temperature: z.boolean(),  // 是否支持调节随机性
-  reasoning: z.boolean(),    // 是否支持扩展思维（如 Claude Extended Thinking）
-  attachment: z.boolean(),   // 是否支持图片/文件输入
-  toolcall: z.boolean(),     // 是否支持 Function Calling
+  temperature: z.boolean(),  // false 时不传 temperature 参数（如某些推理模型固定温度）
+  reasoning: z.boolean(),    // true 时在 prompt 里激活扩展思维（Claude Extended Thinking）
+  attachment: z.boolean(),   // false 时禁用图片/文件附件上传按钮
+  toolcall: z.boolean(),     // false 时完全不传工具列表，避免 API 报 400 错误
   interleaved: z.union([
-    z.boolean(),             // 是否支持思维与工具调用交替
+    z.boolean(),             // 是否支持思维与工具调用在同一条消息中交替出现
     z.object({ field: z.enum(["reasoning_content", "reasoning_details"]) })
+    // 不同模型的 reasoning 字段名不同，这里做了兼容
   ]),
   input: z.object({
-    text: z.boolean(),
-    audio: z.boolean(),
-    image: z.boolean(),
-    video: z.boolean(),
-    pdf: z.boolean(),
+    text: z.boolean(),  // 是否支持文本输入（几乎全部是 true）
+    audio: z.boolean(), // 是否支持语音输入（如 GPT-4o audio）
+    image: z.boolean(), // 是否支持图片输入（视觉能力）
+    video: z.boolean(), // 是否支持视频输入
+    pdf: z.boolean(),   // 是否支持 PDF 文件输入
   }),
-  output: z.object({ text, audio, image, video, pdf }),
+  output: z.object({ text, audio, image, video, pdf }),  // 输出格式同理
 })
 ```
 
@@ -609,6 +612,40 @@ Provider 层的三层结构：
 - OpenCode 如何作为 MCP Client 连接外部 Server
 - MCP 工具如何被注册到 ToolRegistry 并被 Agent 调用
 - 配置 MCP Server 的完整流程
+
+---
+
+## 常见误区
+
+### 误区1：支持多模型只需要换一个 API URL，没有什么工程复杂性
+
+**错误理解**：不同的 LLM API 格式类似，只需要改个 base URL 和 API key，就能切换模型。
+
+**实际情况**：不同提供商的差异远超 URL 和认证：消息格式不同（Anthropic 有 `system` 字段，OpenAI 把 system 放在 messages 里）；工具调用格式不同；流式响应的事件结构不同；错误码不同；token 计数方式不同。Vercel AI SDK 在底层处理了这些差异，但 OpenCode 还要在 SDK 之上处理能力差异（vision、reasoning、long context）。
+
+### 误区2：capabilities 字段只是文档说明，不影响运行时行为
+
+**错误理解**：`capabilities` 里的 `vision: true`、`tool_call: false` 只是告诉用户这个模型能做什么，代码里不用它。
+
+**实际情况**：`capabilities` 直接驱动运行时决策。`vision: false` 的模型不会收到图片附件（即使用户上传了图片）；`tool_call: false` 的模型会切换到不需要工具调用的工作模式；`context_window` 决定了 summary 压缩的触发阈值。这是"数据驱动配置"的典型用法，消除了大量 `if model === "xxx"` 的硬编码。
+
+### 误区3：本地模型（Ollama）和云端模型的功能完全一样
+
+**错误理解**：只要通过 Ollama 运行本地模型，就能得到和 Claude/GPT-4 一样的 Agent 能力。
+
+**实际情况**：本地模型通常通过 OpenAI 兼容接口接入，但 capabilities 往往受限——大多数本地模型的工具调用能力较弱，推理能力差距明显，context window 也更小。OpenCode 的 Provider 层能接入本地模型，但实际任务完成质量取决于模型本身的能力，框架无法弥补模型能力的差距。
+
+### 误区4：API Key 由 OpenCode 统一管理，切换模型时需要重新配置
+
+**错误理解**：切换从 Claude 到 GPT-4 需要在 OpenCode 配置文件里重新填写 API key，每次切换都很麻烦。
+
+**实际情况**：OpenCode 优先使用标准环境变量（`ANTHROPIC_API_KEY`、`OPENAI_API_KEY` 等），这些是各个 SDK 本身的约定。如果你已经在系统环境里配置了这些变量，切换模型时 OpenCode 会自动使用对应的 key，不需要额外配置。
+
+### 误区5：Vercel AI SDK 只适合 Web 应用，在 CLI 里用它是错误选择
+
+**错误理解**：Vercel AI SDK 是为 Next.js/Vercel 部署设计的，CLI 工具应该直接调用各厂商的原生 SDK。
+
+**实际情况**：Vercel AI SDK 的核心是运行时无关的抽象层——它在 Node.js、Bun、Edge Runtime 里都能运行。OpenCode 使用它的原因是统一接口（不用分别维护 Anthropic SDK、OpenAI SDK 等多套客户端代码），以及内置的流式输出支持。这是务实的工程选择，与部署平台无关。
 
 ---
 
