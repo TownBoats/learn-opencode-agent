@@ -13,6 +13,11 @@ import WorkflowVsAgent from './components/WorkflowVsAgent.vue'
 import LspHover from './components/LspHover.vue'
 import ConnectionGate from './components/ConnectionGate.vue'
 import StarCTA from './components/StarCTA.vue'
+import AgentDispatchDemo from './components/AgentDispatchDemo.vue'
+import BackgroundTaskDemo from './components/BackgroundTaskDemo.vue'
+import RuntimeFallbackDemo from './components/RuntimeFallbackDemo.vue'
+import HashlineEditDemo from './components/HashlineEditDemo.vue'
+import TaskDelegationDemo from './components/TaskDelegationDemo.vue'
 import './custom.css'
 
 export default {
@@ -30,5 +35,10 @@ export default {
     app.component('LspHover', LspHover)
     app.component('ConnectionGate', ConnectionGate)
     app.component('StarCTA', StarCTA)
+    app.component('AgentDispatchDemo', AgentDispatchDemo)
+    app.component('BackgroundTaskDemo', BackgroundTaskDemo)
+    app.component('RuntimeFallbackDemo', RuntimeFallbackDemo)
+    app.component('HashlineEditDemo', HashlineEditDemo)
+    app.component('TaskDelegationDemo', TaskDelegationDemo)
   }
 } satisfies Theme
