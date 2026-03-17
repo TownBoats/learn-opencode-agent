@@ -3,10 +3,42 @@ title: 第5章：会话管理
 description: 深入 Session 数据模型、MessageV2 结构化消息、processor.ts 执行循环、上下文压缩与死循环防护机制
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：理解 Session 是 OpenCode 的核心骨架，掌握消息如何流动、循环如何控制、上下文溢出如何处理
 > **前置知识**：第4章"工具系统"
 > **源码路径**：`packages/opencode/src/session/`
 > **阅读时间**：25 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+Agent 循环在代码里长什么样？怎么防止 LLM 无限循环调用工具？上下文窗口满了怎么办？这三个问题的答案都在 processor.ts 这一个文件里。
+
+### 必看入口
+
+processor.ts（执行循环主体，这是全书最重要的文件之一）
+
+### 先抓一条主链路
+
+`processor.ts 启动 → 构建 messages 数组 → 调用 LLM → 解析响应 → if tool_call: 执行工具，结果加入 messages，继续循环 → if stop: 退出循环，会话结束`
+
+### 初学者阅读顺序
+
+1. 先读 schema.ts，理解 Session 和 Message 的数据结构。
+2. 打开 processor.ts，找到主循环的 while 语句——从这里开始阅读。
+3. 读 llm.ts，理解流式响应如何解析成结构化数据。
+4. 读 summary.ts，了解上下文压缩策略。
+5. 回到 processor.ts 看步骤上限检查，理解死循环防护。
+
+### 最容易误解的点
+
+MessageV2 的 Parts 设计——一条 assistant 消息可以包含多个 Part（思考文字、工具调用、工具结果、最终文字）。这不是冗余设计，而是让 CLI、Web、Desktop 三端都能按需渲染同一条消息的不同部分。
 
 ---
 
@@ -705,3 +737,21 @@ Bus                 ← 事件广播：实时通知所有 UI 客户端
 - 模型能力描述（context window、支持的功能）如何驱动运行时决策
 - 认证机制：API Key 如何安全存储和使用
 - Vercel AI SDK 的角色：统一接口背后的实现细节
+
+---
+
+<SourceSnapshotCard
+  title="第5章源码快照"
+  description="Session 是 OpenCode 的核心骨架。processor.ts 的 while 循环是整个 Agent 的心脏——所有其他模块都服务于这个循环的启动、执行和停止。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    { label: 'Session 数据 Schema', path: 'packages/opencode/src/session/schema.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/schema.ts' },
+    { label: '执行循环核心', path: 'packages/opencode/src/session/processor.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/processor.ts' },
+    { label: 'LLM 流式调用', path: 'packages/opencode/src/session/llm.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/llm.ts' },
+    { label: '上下文压缩', path: 'packages/opencode/src/session/summary.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/summary.ts' },
+  ]"
+/>

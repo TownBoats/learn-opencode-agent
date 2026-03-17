@@ -1,6 +1,6 @@
 ---
-title: 第十三篇：部署与基础设施
-description: 第十三篇：部署与基础设施的详细内容
+title: 第14章：部署与基础设施
+description: OpenCode 的四层基础设施：本地运行时、云端公共 API（Cloudflare Workers）、控制台产品线（PlanetScale + SolidStart）与交付层（Docker + CI/CD）的分层设计
 ---
 
 <script setup>
@@ -12,38 +12,6 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
 > **学习目标**：理解 OpenCode 不只是一个本地 CLI，而是一套同时覆盖本地运行时、云端 API、控制台与基础设施编排的多层系统
 
 ---
-
-<SourceSnapshotCard
-  title="第十三篇源码快照"
-  description="这一篇先抓 OpenCode 不是单机 CLI 这件事：本地运行时、云端 API、控制台和 SST 基础设施是怎样被拆层并一起交付的。"
-  repo="anomalyco/opencode"
-  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  branch="dev"
-  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  verified-at="2026-03-15"
-  :entries="[
-    {
-      label: 'SST 总入口',
-      path: 'sst.config.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/sst.config.ts'
-    },
-    {
-      label: '应用资源编排',
-      path: 'infra/app.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/infra/app.ts'
-    },
-    {
-      label: 'Console 资源编排',
-      path: 'infra/console.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/infra/console.ts'
-    },
-    {
-      label: '云端 API 入口',
-      path: 'packages/function/src/api.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/function/src/api.ts'
-    }
-  ]"
-/>
 
 ```mermaid
 graph TB
@@ -79,7 +47,7 @@ graph TB
 
 ## 核心概念速览
 
-这一篇最容易写偏的地方，是把 OpenCode 误写成“一个部署到 Cloudflare 的 AI 工具”。
+这一章最容易写偏的地方，是把 OpenCode 误写成“一个部署到 Cloudflare 的 AI 工具”。
 
 真实情况更接近下面这张图：
 
@@ -104,7 +72,7 @@ graph TB
   - GitHub Actions / 发布流程
 ```
 
-所以这一篇更适合回答四个问题：
+所以这一章更适合回答四个问题：
 
 1. 本地开发时到底跑了哪些进程
 2. 为什么云端还要拆出 `function` 和 `console`
@@ -158,7 +126,7 @@ graph TB
 - `packages/opencode/src/server` 和 `packages/function/src/api.ts` 不是同类服务端。
 - 基础设施层不是附属物，它直接反映了产品边界和资源切分方式。
 
-## 13.1 本地运行时与开发环境
+## 14.1 本地运行时与开发环境
 
 ### 先分清“本地 OpenCode”和“云端 OpenCode”
 
@@ -210,7 +178,7 @@ graph TB
 
 ---
 
-## 13.2 SST 与 Cloudflare 部署
+## 14.2 SST 与 Cloudflare 部署
 
 ### `sst.config.ts` 是基础设施入口，不是业务入口
 
@@ -311,7 +279,7 @@ args.bindings = $resolve(args.bindings).apply((bindings) => [
 
 ---
 
-## 13.3 `packages/function` 与 `packages/console` 的云端架构
+## 14.3 `packages/function` 与 `packages/console` 的云端架构
 
 ### `packages/function` 更像产品级公共 API
 
@@ -579,7 +547,7 @@ new sst.cloudflare.x.SolidStart("Console", {
 
 ---
 
-## 13.4 容器、发布与 CI/CD
+## 14.4 容器、发布与 CI/CD
 
 ### 容器并不是主运行方式，但仍然很重要
 
@@ -622,13 +590,13 @@ new sst.cloudflare.x.SolidStart("Console", {
 2. 保证多目标产物的发布链路一致
 3. 把云端基础设施与应用发布串起来
 
-所以你在写这一篇时，重点不该只是“GitHub Actions 怎么写”，而是：
+所以你在写这一章时，重点不该只是“GitHub Actions 怎么写”，而是：
 
 **为什么多端、多包、多基础设施的项目必须把发布流程工程化。**
 
 ---
 
-## 13.5 监控、日志与扩展性
+## 14.5 监控、日志与扩展性
 
 ### 当前基础设施已经明显在为运营态做准备
 
@@ -658,7 +626,7 @@ new sst.cloudflare.x.SolidStart("Console", {
 
 ### 对电子书读者最有价值的视角
 
-如果你的目标读者是 Agent 开发初学者，我建议这一篇最终强调的是：
+如果你的目标读者是 Agent 开发初学者，我建议这一章最终强调的是：
 
 - 本地 Agent 能跑起来，不代表整个产品架构就完成了
 - 一个成熟 Agent 产品通常还需要分享、认证、控制台、计费、运营、日志
@@ -668,7 +636,7 @@ new sst.cloudflare.x.SolidStart("Console", {
 
 ## 本章小结
 
-### 这一篇最重要的认识
+### 这一章最重要的认识
 
 1. OpenCode 的基础设施不是只有 Cloudflare 部署
 2. 本地运行时、本地 server、云端 function、console 是四层不同职责
@@ -717,7 +685,13 @@ new sst.cloudflare.x.SolidStart("Console", {
 - 为什么 SST 在这里管理的是资源编排，而不是替代业务架构设计。
 - 如果你只做本地 Agent 原型，哪些云端层可以先不做，但哪些边界最好从一开始就留出来。
 
-### 下一篇预告
+### 思考题
+
+1. 为什么 `packages/opencode/src/server`、`packages/function/src/api.ts`、`packages/console/core` 这三层不能被混成一个”统一后端”？
+2. SST 在这个仓库里真正提供的价值是什么，为什么它不能替代应用层业务设计？
+3. 如果你只做一个本地 Agent 原型，哪些云端层可以先不做，但哪些边界最好一开始就预留？
+
+## 下一章预告
 
 理解了运行时和基础设施之后，再看测试体系会更清楚：
 
@@ -726,10 +700,38 @@ new sst.cloudflare.x.SolidStart("Console", {
 - 多端 UI 与 E2E 如何衔接
 - 哪些层适合单测，哪些层必须做集成测试
 
-这就是第十四篇要解决的问题。
+这就是第15章要解决的问题。
 
-### 思考题
+---
 
-1. 为什么 `packages/opencode/src/server`、`packages/function/src/api.ts`、`packages/console/core` 这三层不能被混成一个“统一后端”？
-2. SST 在这个仓库里真正提供的价值是什么，为什么它不能替代应用层业务设计？
-3. 如果你只做一个本地 Agent 原型，哪些云端层可以先不做，但哪些边界最好一开始就预留？
+<SourceSnapshotCard
+  title="第14章源码快照"
+  description="这一章先抓 OpenCode 不是单机 CLI 这件事：本地运行时、云端 API、控制台和 SST 基础设施是怎样被拆层并一起交付的。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: 'SST 总入口',
+      path: 'sst.config.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/sst.config.ts'
+    },
+    {
+      label: '应用资源编排',
+      path: 'infra/app.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/infra/app.ts'
+    },
+    {
+      label: 'Console 资源编排',
+      path: 'infra/console.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/infra/console.ts'
+    },
+    {
+      label: '云端 API 入口',
+      path: 'packages/function/src/api.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/function/src/api.ts'
+    }
+  ]"
+/>

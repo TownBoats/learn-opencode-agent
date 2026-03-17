@@ -3,9 +3,40 @@ title: 第1章：什么是 AI Agent
 description: 从 LLM 到 Agent 的演进，理解 AI Agent 的本质与核心能力
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：理解 AI Agent 的定义、与 LLM/Chatbot 的区别、核心能力和应用场景
 > **前置知识**：了解大语言模型（LLM）的基本概念
 > **阅读时间**：15 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+AI Agent 这个词被滥用了。这一章帮你建立一个清晰的定义：Agent = LLM + Tools + Memory + Planning + Execution Loop。有了这个定义，你才能带着问题去读后面的源码。
+
+### 必看入口
+
+processor.ts（执行循环实体）、agent.ts（Agent 启动逻辑）
+
+### 先抓一条主链路
+
+`用户输入 → processor.ts 启动循环 → LLM 决策 → 工具调用 → 结果反馈 → LLM 再决策 → 输出`
+
+### 初学者阅读顺序
+
+1. 先读本章，建立概念框架。
+2. 再打开 processor.ts，验证"执行循环"确实是一个 while 循环。
+3. 然后读 agent.ts，看 Agent 如何启动。
+4. 最后读 tool/registry.ts，看工具注册机制。
+
+### 最容易误解的点
+
+Agent 不是 AI——LLM 才是 AI，Agent 是包裹 LLM 的工程框架。LLM 只能输出文字，是 Agent 框架解析输出、调用工具、收集结果再喂给 LLM，形成循环。
 
 ---
 
@@ -596,3 +627,37 @@ assistant = client.beta.assistants.create(
 - Execution Loop 如何运转
 
 这些概念将为后续阅读 OpenCode 源码打下基础。
+
+---
+
+<SourceSnapshotCard
+  title="第1章参考源码"
+  description="这一章是概念篇，没有单一核心文件。读这些源码的目的是验证本章描述的 Agent 模型——执行循环、工具注册、Provider 抽象——在真实代码中确实存在。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    {
+      label: 'Agent 执行循环（概念代码）',
+      path: 'packages/opencode/src/session/processor.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/processor.ts'
+    },
+    {
+      label: '工具注册表',
+      path: 'packages/opencode/src/tool/registry.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/tool/registry.ts'
+    },
+    {
+      label: '提供商接口',
+      path: 'packages/opencode/src/provider/provider.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/provider.ts'
+    },
+    {
+      label: 'Agent 入口',
+      path: 'packages/opencode/src/agent/agent.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/agent/agent.ts'
+    }
+  ]"
+/>

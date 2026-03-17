@@ -3,9 +3,41 @@ title: 第2章：AI Agent 的核心组件
 description: 深入理解 LLM、Tools、Memory、Planning、Execution Loop 五个核心模块的工作原理与实现
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：深入理解 AI Agent 的 5 个核心组件，为阅读 OpenCode 源码建立概念基础
 > **前置知识**：第1章"什么是 AI Agent"
 > **阅读时间**：25 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+第1章告诉你 Agent 是什么，第2章告诉你每个组件怎么工作。Function Calling 是 LLM 调用工具的底层机制、上下文窗口限制决定了记忆系统的设计、执行循环是整个系统的心脏。
+
+### 必看入口
+
+llm.ts（Function Calling 实现）、processor.ts（执行循环）
+
+### 先抓一条主链路
+
+`processor.ts 调用 llm.ts → LLM 返回 tool_call → processor.ts 执行工具 → 结果加入消息历史 → 再次调用 LLM → 直到 LLM 返回 stop`
+
+### 初学者阅读顺序
+
+1. 先读本章 2.4 节（执行循环），建立"循环"的直觉。
+2. 打开 processor.ts，找 while 循环主体。
+3. 读 llm.ts，看 Function Calling 怎么解析。
+4. 读 tool.ts，看工具的 interface 定义。
+5. 读 schema.ts，理解消息格式。
+
+### 最容易误解的点
+
+Planning（规划）不是一个独立的模块——OpenCode 里 LLM 本身就是规划器，它通过 System Prompt 里的指令来决定调用哪个工具、什么时候停止。没有单独的 planner.ts 文件。
 
 ---
 
@@ -626,3 +658,37 @@ graph TD
 - 项目目录结构与模块分工
 - 一次任务的完整代码路径
 - 客户端/服务器分离架构的设计动机
+
+---
+
+<SourceSnapshotCard
+  title="第2章参考源码"
+  description="这一章讲的是 AI Agent 五大组件的工作原理。对应的源码不在一个文件里——LLM 接口在 provider/、工具在 tool/、记忆在 session/、执行循环在 processor.ts。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    {
+      label: 'LLM 流式调用',
+      path: 'packages/opencode/src/session/llm.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/llm.ts'
+    },
+    {
+      label: '工具定义基类',
+      path: 'packages/opencode/src/tool/tool.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/tool/tool.ts'
+    },
+    {
+      label: '执行循环',
+      path: 'packages/opencode/src/session/processor.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/processor.ts'
+    },
+    {
+      label: '会话 Schema',
+      path: 'packages/opencode/src/session/schema.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/schema.ts'
+    }
+  ]"
+/>

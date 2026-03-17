@@ -1,6 +1,6 @@
 ---
-title: 第十二篇：插件与扩展
-description: 第十二篇：插件与扩展的详细内容
+title: 第13章：插件与扩展
+description: 插件、Skill、命令和编辑器扩展四种扩展方式的完整对比：何时写代码、何时写 Markdown、何时接外部系统，以及扩展如何进入统一工具和命令边界
 ---
 
 <script setup>
@@ -12,38 +12,6 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
 > **学习目标**：理解 OpenCode 当前仓库里的真实扩展方式，知道什么时候该写插件、什么时候该写 Skill、什么时候只需要一个命令模板
 
 ---
-
-<SourceSnapshotCard
-  title="第十二篇源码快照"
-  description="这一篇先把扩展手段分清楚：插件、Skill、命令和编辑器扩展各自从哪条入口进入系统，以及它们最后怎样汇入统一能力边界。"
-  repo="anomalyco/opencode"
-  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  branch="dev"
-  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  verified-at="2026-03-15"
-  :entries="[
-    {
-      label: '插件接口',
-      path: 'packages/plugin/src/index.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/plugin/src/index.ts'
-    },
-    {
-      label: '运行时插件加载',
-      path: 'packages/opencode/src/plugin/index.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/plugin/index.ts'
-    },
-    {
-      label: 'Skill 装载',
-      path: 'packages/opencode/src/skill/skill.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/skill/skill.ts'
-    },
-    {
-      label: 'Command 入口',
-      path: 'packages/opencode/src/command/index.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/command/index.ts'
-    }
-  ]"
-/>
 
 ```mermaid
 graph LR
@@ -63,7 +31,7 @@ graph LR
 
 ## 核心概念速览
 
-如果你是 Agent 开发初学者，这一篇最重要的目标不是背概念，而是先分清楚 OpenCode 里几种扩展方式各自负责什么：
+如果你是 Agent 开发初学者，这一章最重要的目标不是背概念，而是先分清楚 OpenCode 里几种扩展方式各自负责什么：
 
 - **插件（Plugin）**：写 TypeScript 代码，接入 Hook、认证逻辑、自定义工具，适合“要运行逻辑”的扩展
 - **Skill**：写 `SKILL.md`，给 Agent 注入一整套工作流和额外资源，适合“要教模型怎么做”的扩展
@@ -135,7 +103,7 @@ plugin / skill / command / MCP prompt 等扩展来源
 - Skill 和 Command 的价值不低，它们很多时候比新插件更适合初学者。
 - 插件接入之后仍然要回到统一权限、工具和会话边界中，不是随意外挂逻辑。
 
-## 12.1 扩展体系全景
+## 13.1 扩展体系全景
 
 ### 先从目录理解整体结构
 
@@ -194,7 +162,7 @@ packages/extensions/zed/
 
 ---
 
-## 12.2 插件系统架构
+## 13.2 插件系统架构
 
 ### 插件接口长什么样
 
@@ -367,7 +335,7 @@ export default Demo
 
 ---
 
-## 12.3 Skill 系统设计
+## 13.3 Skill 系统设计
 
 ### Skill 不是插件，它更像”可加载的专用操作手册”
 
@@ -415,7 +383,7 @@ SkillTool（内置工具）
 ├── bash
 └── skill  ← 这是 SkillTool，不是 Skill
 
-第十二篇视角（扩展系统）：
+第13章视角（扩展系统）：
 Skill 系统
 ├── Skill 发现与加载
 ├── SkillTool 提供工具接口
@@ -515,7 +483,7 @@ for (const skill of await Skill.all()) {
 
 ---
 
-## 12.4 自定义命令开发
+## 13.4 自定义命令开发
 
 ### 命令的载体其实就是 Markdown 模板
 
@@ -594,7 +562,7 @@ OpenCode 自带两个默认命令：
 
 ---
 
-## 12.5 编辑器扩展：VS Code 与 Zed
+## 13.5 编辑器扩展：VS Code 与 Zed
 
 ### VS Code 扩展并没有重做一个 Agent，而是驱动本地 opencode
 
@@ -652,7 +620,7 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
 
 ---
 
-## 12.6 给初学者的实践路线
+## 13.6 给初学者的实践路线
 
 如果你是第一次基于这个仓库学习 Agent 扩展，我建议按下面顺序动手：
 
@@ -698,7 +666,7 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
 
 ## 本章小结
 
-### 这一篇真正要掌握什么
+### 这一章真正要掌握什么
 
 不是“OpenCode 有很多扩展点”，而是下面这几个判断：
 
@@ -745,9 +713,15 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
 - 为什么 Skill 和 Command 往往是比“直接写插件”更低漂移的第一步。
 - 为什么一个扩展想进入真实用户流程，最终还得回到统一的工具、命令或上下文边界。
 
-### 下一篇预告
+### 思考题
 
-在第十三篇里，更适合从“本地运行时 + 云端基础设施”两条线来理解 OpenCode：
+1. 面对一个高频开发任务，你会如何判断它更适合做成 Command、Skill 还是 Plugin？
+2. 为什么 Skill 和 Command 往往比”直接写插件”更适合作为初学者的第一步扩展方式？
+3. 一个扩展如果想进入真实用户流程，最终为什么还得回到统一的工具、命令或上下文边界？
+
+## 下一章预告
+
+在第14章里，更适合从”本地运行时 + 云端基础设施”两条线来理解 OpenCode：
 
 - 本地 CLI / TUI / Desktop 如何运行
 - Web 与 Console 各自承担什么职责
@@ -755,8 +729,36 @@ await fetch(`http://localhost:${port}/tui/append-prompt`, {
 
 这样比单纯讲部署平台，更贴近你真正会在仓库里看到的结构。
 
-### 思考题
+---
 
-1. 面对一个高频开发任务，你会如何判断它更适合做成 Command、Skill 还是 Plugin？
-2. 为什么 Skill 和 Command 往往比“直接写插件”更适合作为初学者的第一步扩展方式？
-3. 一个扩展如果想进入真实用户流程，最终为什么还得回到统一的工具、命令或上下文边界？
+<SourceSnapshotCard
+  title="第13章源码快照"
+  description="这一章先把扩展手段分清楚：插件、Skill、命令和编辑器扩展各自从哪条入口进入系统，以及它们最后怎样汇入统一能力边界。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: '插件接口',
+      path: 'packages/plugin/src/index.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/plugin/src/index.ts'
+    },
+    {
+      label: '运行时插件加载',
+      path: 'packages/opencode/src/plugin/index.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/plugin/index.ts'
+    },
+    {
+      label: 'Skill 装载',
+      path: 'packages/opencode/src/skill/skill.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/skill/skill.ts'
+    },
+    {
+      label: 'Command 入口',
+      path: 'packages/opencode/src/command/index.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/command/index.ts'
+    }
+  ]"
+/>

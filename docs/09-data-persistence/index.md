@@ -3,7 +3,57 @@ title: 第10章：数据持久化
 description: SQLite + Drizzle ORM 的 Schema 设计、JSON blob 策略、事务与副效应队列、以及从文件存储到数据库的演进迁移
 ---
 
-## 为什么选择 SQLite？
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
+> **对应路径**：`packages/opencode/src/storage/`、`packages/opencode/src/session/session.sql.ts`
+> **前置阅读**：第5章 会话管理、第3章 项目介绍
+> **学习目标**：理解 SQLite + Drizzle ORM 的 Schema 设计、JSON blob 策略、事务与副效应队列，以及 JSON 文件到 SQLite 的演进迁移
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+这一章要回答的是：
+
+- OpenCode 为什么选 SQLite 而不是 PostgreSQL 或 MongoDB
+- `Database.use()` / `transaction()` / `effect()` 三个函数如何协作防止"通知先于数据"的竞态
+- PartTable 为什么用 JSON blob 而不是多列展开
+- 旧的 JSON 文件存储和新的 SQLite 数据库如何共存并完成迁移
+
+### 必看入口
+
+- [packages/opencode/src/storage/db.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/db.ts)：数据库初始化与事务管理
+- [packages/opencode/src/session/session.sql.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/session/session.sql.ts)：核心三级嵌套 Schema
+- [packages/opencode/src/storage/json-migration.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts)：大规模数据迁移实现
+
+### 先抓一条主链路
+
+```text
+Session 创建
+  -> Database.transaction(tx => {
+       tx.insert(SessionTable).values(...).run()
+       Database.effect(() => Bus.publish(Session.Events.Created, ...))
+     })
+  -> 事务提交 -> effect 执行 -> Bus 广播 -> UI 更新
+```
+
+### 初学者阅读顺序
+
+1. 先读 `db.ts`，理解 PRAGMA 配置和 `use/transaction/effect` 三函数。
+2. 再读 `session.sql.ts`，理解三级嵌套 Schema（Project→Session→Message→Part）。
+3. 最后读 `json-migration.ts`，看"孤立记录"处理和批处理策略。
+
+### 最容易误解的点
+
+- `Database.effect()` 不是"立即执行副效应"，而是"事务提交后才执行"——这是防止竞态的关键。
+- PartTable 的 `session_id` 是冗余字段，存在是为了避免 JOIN，不是设计缺陷。
+- JSON 文件存储（`storage.ts`）现在还在使用，不是被完全替代了，两套系统并存。
+
+## 10.1 为什么选择 SQLite？
 
 OpenCode 是一个在用户本地运行的工具，它的数据库选型必须满足几个苛刻条件：
 
@@ -48,7 +98,7 @@ erDiagram
     MESSAGE ||--o{ FILE_CHANGE : "记录"
 ```
 
-## 数据库的两个生命阶段
+## 10.2 数据库的两个生命阶段
 
 OpenCode 的持久化层有一段有趣的演进历史：**它曾经用 JSON 文件存储所有数据，后来迁移到了 SQLite**。
 
@@ -65,7 +115,7 @@ packages/opencode/src/storage/
 
 理解这两套系统，才能理解 OpenCode 数据层的全貌。
 
-## SQLite 初始化：PRAGMA 配置的工程选择
+## 10.3 SQLite 初始化：PRAGMA 配置的工程选择
 
 数据库初始化在 `db.ts` 的 `Database.Client` 懒加载函数中完成：
 
@@ -98,7 +148,7 @@ export const Client = lazy(() => {
 
 **WAL 模式的重要性**：OpenCode 服务器可能同时处理多个请求（TUI 操作 + Web API），WAL 模式确保读者不阻塞写者，写者不阻塞读者。
 
-## 数据库文件路径：频道感知
+## 10.4 数据库文件路径：频道感知
 
 ```typescript
 export const Path = iife(() => {
@@ -112,7 +162,7 @@ export const Path = iife(() => {
 
 正式发布版（latest/beta）使用 `opencode.db`，其他频道（如开发构建 `dev`）使用独立的 `opencode-dev.db`。这防止了"用开发版把正式版数据库改坏"的情况。对于持续集成和测试环境，可以通过 `Flag.OPENCODE_DISABLE_CHANNEL_DB` 强制使用统一文件名。
 
-## 核心 Schema：三级嵌套结构
+## 10.5 核心 Schema：三级嵌套结构
 
 所有表定义通过 `storage/schema.ts` 统一导出，但实际定义分散在各个领域模块中：
 
@@ -270,7 +320,7 @@ export const TodoTable = sqliteTable(
 
 Todo 使用 `(session_id, position)` 复合主键，而不是独立的 UUID。这种设计意味着"同一会话内 position 唯一"，天然保证了待办事项的有序性，不需要额外的 ORDER BY 字段。
 
-## Database 命名空间：事务与副效应分离
+## 10.6 Database 命名空间：事务与副效应分离
 
 `db.ts` 暴露了三个核心函数，它们共同构成了一个轻量级的事务管理系统：
 
@@ -345,7 +395,7 @@ Database.transaction((tx) => {
 // 事务提交成功 → Bus.publish 执行 → 客户端收到通知
 ```
 
-## JSON 文件存储：历史与现状
+## 10.7 JSON 文件存储：历史与现状
 
 在 SQLite 引入之前，OpenCode 使用 `Storage` 命名空间管理基于文件系统的 JSON 存储：
 
@@ -395,7 +445,7 @@ await Filesystem.writeJson(target, content)
 
 JSON 文件存储的优点是"无需数据库，直接用文件编辑器就能查看和修改数据"，但随着数据量增大，性能逐渐成为瓶颈。
 
-## 从 JSON 到 SQLite：大规模数据迁移
+## 10.8 从 JSON 到 SQLite：大规模数据迁移
 
 `json-migration.ts` 实现了一次性的数据迁移，将旧的 JSON 文件数据完整迁移到 SQLite。
 
@@ -466,7 +516,7 @@ sqlite.exec("COMMIT")
 
 整个迁移在一个事务中完成，要么全部成功，要么全部回滚，不留中间状态。
 
-## 数据关系全貌
+## 10.9 数据关系全貌
 
 ```
 Project ─┬─ Session ─┬─ Message ─── Part
@@ -504,7 +554,7 @@ PermissionTable
   data (JSON blob: allow/deny/ask 规则集)
 ```
 
-## 迁移系统：SQL 迁移文件管理
+## 10.10 迁移系统：SQL 迁移文件管理
 
 OpenCode 使用 Drizzle 的标准迁移系统，迁移文件位于 `packages/opencode/migration/` 目录：
 
@@ -536,7 +586,7 @@ function time(tag: string) {
 
 在生产构建中，迁移文件会通过 `OPENCODE_MIGRATIONS` 全局变量打包进二进制，不依赖文件系统路径。开发模式则直接读取 `migration/` 目录。
 
-## 设计总结
+## 10.11 设计总结
 
 OpenCode 数据持久化层的核心设计决策：
 
@@ -550,7 +600,24 @@ OpenCode 数据持久化层的核心设计决策：
 | 冗余字段 | `part.session_id` | 空间换时间，避免 JOIN |
 | 副效应 | 事务后执行 | 防止"通知先于数据"竞态 |
 
----
+## 本章小结
+
+### 关键代码位置
+
+| 模块 | 位置 | 建议关注点 |
+| --- | --- | --- |
+| 数据库初始化 | `packages/opencode/src/storage/db.ts` | PRAGMA 配置、`use/transaction/effect` 三函数 |
+| 核心 Schema | `packages/opencode/src/session/session.sql.ts` | 三级嵌套结构、JSON blob 策略 |
+| 项目 Schema | `packages/opencode/src/project/project.sql.ts` | ProjectID 生成策略（git 根 commit hash） |
+| 时间戳共享 | `packages/opencode/src/storage/schema.sql.ts` | `Timestamps` 复用模式 |
+| JSON 存储 | `packages/opencode/src/storage/storage.ts` | 文件锁、read-modify-write |
+| 数据迁移 | `packages/opencode/src/storage/json-migration.ts` | 外键顺序、批处理、孤立记录处理 |
+
+### 源码阅读路径
+
+1. 先读 `db.ts`，重点理解 `transaction()` 和 `effect()` 的协作关系。
+2. 再读 `session.sql.ts`，画出 Project → Session → Message → Part 的层级关系图。
+3. 对照第5章的 `Session.create()`，找到 `Database.transaction()` 的实际调用点，验证副效应时序。
 
 **思考题**：
 
@@ -560,8 +627,40 @@ OpenCode 数据持久化层的核心设计决策：
 
 3. 从 JSON 文件迁移到 SQLite 时，迁移脚本对"孤立记录"的处理是"跳过而不失败"。在真实的生产迁移中，这是正确的做法吗？什么情况下应该选择"严格模式（遇到错误就停止）"？
 
----
-
-**下一章预告**
+## 下一章预告
 
 第11章：**多端 UI 开发** — 深入 `packages/app/` 和 `packages/desktop/`，学习：SolidJS Web 应用的组件架构、Tauri 桌面端的 Rust + TypeScript 桥接、多端共享代码的策略，以及如何用同一套 HTTP API 支撑 TUI、Web 和桌面三种客户端。
+
+---
+
+<SourceSnapshotCard
+  title="第10章源码快照"
+  description="这一章的核心是 db.ts 的副效应队列设计：为什么事务提交后才能发 Bus 事件，以及 JSON blob 策略如何让多种 Part 类型共存于同一张表。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: '数据库初始化',
+      path: 'packages/opencode/src/storage/db.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/storage/db.ts'
+    },
+    {
+      label: '核心 Schema',
+      path: 'packages/opencode/src/session/session.sql.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/session/session.sql.ts'
+    },
+    {
+      label: 'JSON 文件存储（历史方案）',
+      path: 'packages/opencode/src/storage/storage.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/storage/storage.ts'
+    },
+    {
+      label: 'JSON→SQLite 迁移',
+      path: 'packages/opencode/src/storage/json-migration.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/storage/json-migration.ts'
+    }
+  ]"
+/>

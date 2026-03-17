@@ -3,6 +3,16 @@ title: 第8章：TUI 终端界面
 description: 深入 OpenCode TUI 实现——SolidJS 响应式终端渲染、Provider 树、SSE 事件驱动、Sync 状态中心与工具可视化
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
+> **对应路径**：`packages/opencode/src/cli/cmd/tui/`、`packages/app/src/`
+> **前置阅读**：第6章 多模型支持、第5章 会话管理
+> **学习目标**：理解 OpenCode 如何在终端里渲染一个响应式 UI，以及 SolidJS Provider 树如何驱动 TUI 的状态管理
+
+---
+
 > **学习目标**：理解 TUI 为什么选 SolidJS、如何通过 SSE 实时更新、Provider 树如何组织全局状态
 > **前置知识**：第7章"MCP 协议集成"
 > **源码路径**：`packages/opencode/src/cli/cmd/tui/`
@@ -33,6 +43,46 @@ graph TD
 ```
 
 ---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+这一章要回答的是：
+
+- OpenCode 为什么选择 TUI 而不是纯 CLI
+- SolidJS 如何在终端（非浏览器）环境中渲染 UI
+- SDKProvider 和 SyncProvider 各自负责什么
+- 工具调用、权限弹窗、键盘绑定是如何协作的
+
+### 必看入口
+
+- [packages/opencode/src/cli/cmd/tui/index.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/cli/cmd/tui/index.tsx)：TUI 启动与 Provider 树组装
+- [packages/opencode/src/cli/cmd/tui/provider/sdk.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/cli/cmd/tui/provider/sdk.tsx)：SSE 事件驱动的数据层
+- [packages/opencode/src/cli/cmd/tui/provider/sync.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/cli/cmd/tui/provider/sync.tsx)：全局状态与乐观更新
+
+### 先抓一条主链路
+
+```text
+opencode 启动
+  -> TUI 入口组装 SDKProvider + SyncProvider
+  -> SDKProvider 连接 SSE 事件流（/event）
+  -> 收到事件 -> SyncProvider 更新状态
+  -> SolidJS 信号触发 UI 重渲染
+  -> 键盘输入 -> 发送 prompt -> 等待响应
+```
+
+### 初学者阅读顺序
+
+1. 先读 `tui/index.tsx`，理解 TUI 的 Provider 树如何组装。
+2. 再读 `provider/sdk.tsx`，看 SSE 连接和事件分发机制。
+3. 最后看 `provider/sync.tsx` 和路由组件，理解状态如何驱动界面。
+
+### 最容易误解的点
+
+- SolidJS 不是 React，`createSignal` 和 `createStore` 的更新粒度更细。
+- SDKProvider 负责"接收事件"，SyncProvider 负责"组织状态"，两者职责严格分开。
+- TUI 和 Web App 共用同一套 HTTP API，不是两套独立实现。
 
 ## 8.1 为什么是 TUI，不是简单 CLI
 
@@ -555,6 +605,25 @@ OpenCode HTTP Server              ← 业务逻辑
 | 服务端暂停 + 客户端交互 | 权限确认不需要特殊协议，利用现有 REST API |
 | 自动检测终端背景色 | dark/light 主题跟随终端，而不是强制一种 |
 
+### 关键代码位置
+
+| 模块 | 位置 | 建议关注点 |
+| --- | --- | --- |
+| TUI 入口 | `packages/opencode/src/cli/cmd/tui/index.tsx` | Provider 树组装、启动流程 |
+| SDKProvider | `packages/opencode/src/cli/cmd/tui/provider/sdk.tsx` | SSE 连接、心跳重连、事件分发 |
+| SyncProvider | `packages/opencode/src/cli/cmd/tui/provider/sync.tsx` | 全局状态、乐观更新 |
+| Home 路由 | `packages/opencode/src/cli/cmd/tui/home.tsx` | 会话列表渲染 |
+| Session 路由 | `packages/opencode/src/cli/cmd/tui/session.tsx` | 对话主界面 |
+| 键盘系统 | `packages/opencode/src/cli/cmd/tui/hotkey.tsx` | 快捷键注册与冒泡 |
+| 权限弹窗 | `packages/opencode/src/cli/cmd/tui/permission.tsx` | 工具授权交互 |
+
+### 源码阅读路径
+
+1. 先读 `tui/index.tsx` 建立 Provider 树全貌。
+2. 再读 `provider/sdk.tsx`，追踪一个 SSE 事件从接收到分发的完整路径。
+3. 然后读 `provider/sync.tsx`，理解状态更新如何触发 UI 刷新。
+4. 最后分别看 `home.tsx` 和 `session.tsx`，理解两个主要路由的渲染逻辑。
+
 ### 思考题
 
 1. `SyncProvider` 为什么选择 `produce`（Immer 风格）而不是直接 `setStore` 替换整个数组？在实时追加文字这个场景下有什么性能差异？
@@ -572,3 +641,37 @@ OpenCode HTTP Server              ← 业务逻辑
 - SSE 事件推送的实现机制
 - API 与 SDK 的生成关系
 - 认证中间件与 CORS 配置
+
+---
+
+<SourceSnapshotCard
+  title="第8章源码快照"
+  description="这一章的核心是理解 TUI 如何把 HTTP API 的事件流转化成终端界面的实时更新，以及 SolidJS 在非浏览器环境中如何工作。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: 'TUI 入口',
+      path: 'packages/opencode/src/cli/cmd/tui/index.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/cli/cmd/tui/index.tsx'
+    },
+    {
+      label: 'SDKProvider（事件驱动数据层）',
+      path: 'packages/opencode/src/cli/cmd/tui/provider/sdk.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/cli/cmd/tui/provider/sdk.tsx'
+    },
+    {
+      label: 'SyncProvider（全局状态中心）',
+      path: 'packages/opencode/src/cli/cmd/tui/provider/sync.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/cli/cmd/tui/provider/sync.tsx'
+    },
+    {
+      label: '键盘系统',
+      path: 'packages/opencode/src/cli/cmd/tui/hotkey.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/cli/cmd/tui/hotkey.tsx'
+    }
+  ]"
+/>

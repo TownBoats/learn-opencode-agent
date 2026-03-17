@@ -3,10 +3,41 @@ title: 第6章：多模型支持
 description: 深入 Provider 抽象层——模型能力描述、消息格式转换、认证机制，以及 Vercel AI SDK 如何统一十余个提供商
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：理解 Provider 层的设计动机，掌握模型能力如何驱动运行时决策，了解认证与消息格式转换机制
 > **前置知识**：第5章"会话管理"
 > **源码路径**：`packages/opencode/src/provider/`
 > **阅读时间**：20 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+为什么 OpenCode 能同时支持 Claude、GPT-4、Gemini 和本地模型？Provider 抽象层是答案。这一章揭示"多模型支持"背后的工程实现。
+
+### 必看入口
+
+provider.ts（Provider.Model 类型定义和能力字段）、sdk.ts（统一调用入口）
+
+### 先抓一条主链路
+
+`processor.ts 调用 Provider.getModel(providerID, modelID) → 返回 Vercel AI SDK 兼容的 model 对象 → llm.ts 调用 streamText(model, messages) → SDK 负责格式转换和 HTTP 调用`
+
+### 初学者阅读顺序
+
+1. 先读 provider.ts 的 Model 类型，特别是 capabilities 字段（vision、tool_call、reasoning）。
+2. 读 anthropic.ts，看一个具体提供商怎么实现。
+3. 读 sdk.ts，理解 Vercel AI SDK 如何统一接口。
+4. 打开 sync.ts，了解模型列表如何从远程同步。
+
+### 最容易误解的点
+
+capabilities 字段不只是文档——它在运行时驱动决策。例如 vision: true 才允许上传图片附件，tool_call: false 的模型不会被用于需要工具调用的场景。这是"数据驱动"而不是 if/else 硬编码。
 
 ---
 
@@ -578,3 +609,21 @@ Provider 层的三层结构：
 - OpenCode 如何作为 MCP Client 连接外部 Server
 - MCP 工具如何被注册到 ToolRegistry 并被 Agent 调用
 - 配置 MCP Server 的完整流程
+
+---
+
+<SourceSnapshotCard
+  title="第6章源码快照"
+  description="Provider 层的核心价值是让 session 层完全不感知底层是哪个 LLM 提供商。provider.ts 定义 Model 类型，providers/ 里每个文件是一个提供商的适配器，sdk.ts 统一调用 Vercel AI SDK。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    { label: 'Provider 核心类型', path: 'packages/opencode/src/provider/provider.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/provider.ts' },
+    { label: 'Anthropic 适配器', path: 'packages/opencode/src/provider/providers/anthropic.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/providers/anthropic.ts' },
+    { label: 'SDK 统一调用层', path: 'packages/opencode/src/provider/sdk.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/sdk.ts' },
+    { label: '模型同步', path: 'packages/opencode/src/provider/sync.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/provider/sync.ts' },
+  ]"
+/>

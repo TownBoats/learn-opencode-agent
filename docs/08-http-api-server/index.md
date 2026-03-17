@@ -3,7 +3,59 @@ title: 第9章：HTTP API 服务器
 description: 深入 Hono 框架驱动的 API 服务器，理解路由组织、SSE 推送、OpenAPI 自动生成与工作区上下文注入机制
 ---
 
-## 为什么需要一个独立的 API 服务器？
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
+> **对应路径**：`packages/opencode/src/server/`
+> **前置阅读**：第8章 TUI 终端界面、第5章 会话管理
+> **学习目标**：理解 Hono 中间件链的设计、SSE 事件总线与 HTTP 流式响应的两种模式，以及工作区上下文注入机制
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+这一章要回答的是：
+
+- 为什么 OpenCode 需要一个独立的 HTTP API 服务器，而不是把逻辑直接嵌入 TUI
+- Hono 中间件链的每一层各负责什么
+- SSE 全局事件总线和 HTTP Stream 单次响应有什么区别，为什么需要两种模式
+- 工作区上下文如何通过 AsyncLocalStorage 注入到每个请求
+
+### 必看入口
+
+- [packages/opencode/src/server/server.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/server/server.ts)：`createApp` 中间件链定义
+- [packages/opencode/src/server/routes/session.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/server/routes/session.ts)：Session 路由（最复杂的部分）
+- [packages/opencode/src/server/error.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/server/error.ts)：`NamedError` 统一错误体系
+
+### 先抓一条主链路
+
+```text
+客户端发出 POST /session/:id/message
+  -> onError 注册（兜底）
+  -> BasicAuth 检查
+  -> CORS 白名单过滤
+  -> 工作区上下文注入（Instance.provide）
+  -> SessionRoutes -> 消息处理
+  -> stream() 写入最终结果
+  -> SSE /event 广播实时进度给所有客户端
+```
+
+### 初学者阅读顺序
+
+1. 先读 `server.ts` 中的 `createApp`，理解中间件链的全貌。
+2. 再读 `routes/session.ts`，重点看 `POST /:sessionID/message` 和 `GET /event`。
+3. 最后看 `error.ts`，理解 `NamedError` 如何统一错误响应格式。
+
+### 最容易误解的点
+
+- `GET /event`（SSE）和 `POST /session/:id/message`（HTTP Stream）是两套不同机制，前者广播给所有客户端，后者只响应单个请求。
+- 工作区上下文注入用的是 AsyncLocalStorage，不是函数参数传递——这和 React Context 的思想一致。
+- 未匹配路径会被代理到 `app.opencode.ai`，所以同一端口能同时提供 API 和 Web UI。
+
+## 9.1 为什么需要一个独立的 API 服务器？
 
 OpenCode 从立项之初就确立了一个原则：**核心逻辑只实现一次，但可以被多个前端消费**。
 
@@ -39,7 +91,7 @@ graph LR
     style PROC fill:#065f46,color:#fff
 ```
 
-## 技术选型：为什么选 Hono？
+## 9.2 技术选型：为什么选 Hono？
 
 Node.js 生态里的 HTTP 框架从不缺选择，但 OpenCode 选择了 Hono。原因很实际：
 
@@ -53,7 +105,7 @@ Node.js 生态里的 HTTP 框架从不缺选择，但 OpenCode 选择了 Hono。
 
 OpenCode 大量使用了 `hono-openapi` 提供的 `describeRoute` + `validator` + `resolver` 三件套，使每个路由处理函数同时承担"业务逻辑"和"API 文档"两项职责。
 
-## 服务器入口：createApp 的中间件链
+## 9.3 服务器入口：createApp 的中间件链
 
 服务器的核心工厂函数在 `packages/opencode/src/server/server.ts`：
 
@@ -88,7 +140,7 @@ export const createApp = (opts: { cors?: string[] }): Hono => {
 
 中间件按顺序执行，每一层都有明确职责。让我们逐层深入。
 
-## 第一层：统一错误处理
+## 9.4 第一层：统一错误处理
 
 `.onError` 是 Hono 的全局错误捕获器：
 
@@ -126,7 +178,7 @@ describeRoute({
 })
 ```
 
-## 第二层：可选的 BasicAuth
+## 9.5 第二层：可选的 BasicAuth
 
 ```typescript
 .use((c, next) => {
@@ -140,7 +192,7 @@ describeRoute({
 
 通过环境变量 `OPENCODE_SERVER_PASSWORD` 启用 BasicAuth。这对"在远程服务器上运行 `opencode serve`，本地通过 SSH 隧道连接"的场景很有用。注意 CORS OPTIONS 预检请求被豁免，否则浏览器客户端会因为预检失败而无法正常工作。
 
-## 第三层：CORS 精细白名单
+## 9.6 第三层：CORS 精细白名单
 
 CORS 配置直接影响哪些 Web 应用可以调用 API：
 
@@ -161,7 +213,7 @@ CORS 配置直接影响哪些 Web 应用可以调用 API：
 
 白名单涵盖四类来源：本地开发服务器、Tauri 桌面应用（有三种不同的 Origin 格式）、opencode.ai 旗下的所有子域名，以及启动时通过 `--cors` 参数指定的自定义域名。`origin` 函数返回字符串则允许，返回 `undefined` 则拒绝。
 
-## 第四层：工作区上下文注入
+## 9.7 第四层：工作区上下文注入
 
 这是整个中间件链中最核心的一层，也是最体现 OpenCode 架构思想的地方：
 
@@ -196,7 +248,7 @@ CORS 配置直接影响哪些 Web 应用可以调用 API：
 
 这和 React 的 `Context` API 在设计思想上一脉相承：不是把依赖一层一层传下去，而是注入到一个"环境"里，需要的地方直接取。
 
-## 路由组织：模块化 Hono 子路由
+## 9.8 路由组织：模块化 Hono 子路由
 
 所有业务路由按资源类型拆分为独立文件，挂载到对应路径：
 
@@ -216,7 +268,7 @@ CORS 配置直接影响哪些 Web 应用可以调用 API：
 
 每个子路由都是一个标准的 Hono 实例，通过 `.route()` 方法挂载。这种设计让每个路由模块可以独立测试，也可以独立演进。
 
-## Session 路由：API 的核心
+## 9.9 Session 路由：API 的核心
 
 Session 路由是 OpenCode API 最丰富的部分，`routes/session.ts` 有近千行。它完整体现了 RESTful 设计加流式扩展的混合风格：
 
@@ -278,7 +330,7 @@ PATCH  /session/:id/message/:msgID/part/:partID    # 更新某个 Part
 
 消息 API 直接操作第5章介绍的 `MessageV2` Part 结构，粒度细到单个 Part 的增删改。
 
-## 流式响应：两种截然不同的模式
+## 9.10 流式响应：两种截然不同的模式
 
 OpenCode 服务器使用了两种流式技术，针对不同的场景。
 
@@ -370,7 +422,7 @@ async (c) => {
 | `POST /session/:id/message` | HTTP Stream | 等待 AI 处理完成，返回最终消息 |
 | `POST /session/:id/prompt_async` | HTTP 204 | 触发 AI 处理，不等结果 |
 
-## OpenAPI 自动生成
+## 9.11 OpenAPI 自动生成
 
 每个路由都用 `describeRoute` 标注了元信息，用 `validator` 定义了 Zod 模式，用 `resolver` 关联 Zod 类型到 OpenAPI Schema。这三者配合，让 API 文档自动从代码生成：
 
@@ -417,7 +469,7 @@ script/generate.ts  →  packages/sdk/js/src/
 
 这条流水线保证了"服务器返回什么，客户端就能看到什么类型"的端到端类型安全。
 
-## 服务器启动：端口策略与 mDNS
+## 9.12 服务器启动：端口策略与 mDNS
 
 `Server.listen()` 处理启动逻辑：
 
@@ -454,7 +506,7 @@ export function listen(opts: {
 
 **mDNS 广播**：在局域网模式（`--hostname 0.0.0.0`）下，服务器通过 mDNS 广播自己的地址，移动端或其他设备可以自动发现，无需手动配置 IP。这是 `server/mdns.ts` 的职责。
 
-## 兜底代理：透明转发到 Web 应用
+## 9.13 兜底代理：透明转发到 Web 应用
 
 ```typescript
 .all("/*", async (c) => {
@@ -473,7 +525,7 @@ export function listen(opts: {
 
 用户不需要分别启动"后端服务器"和"前端开发服务器"，一个命令就能得到完整的 Web + API 环境。
 
-## 请求的完整生命周期
+## 9.14 请求的完整生命周期
 
 把上面各层串联起来，一个 `POST /session/:id/message` 请求的完整路径是：
 
@@ -510,7 +562,7 @@ stream.write(JSON.stringify(msg))  →  响应返回
 
 整个过程中，Bus 持续广播事件（`session.assistant.token`、`session.tool.call` 等），已连接 SSE 的客户端实时更新 UI。`POST /session/:id/message` 只是最后的"告知完成"。
 
-## 设计模式总结
+## 9.15 设计模式总结
 
 | 模式 | 体现 | 好处 |
 |------|------|------|
@@ -520,7 +572,23 @@ stream.write(JSON.stringify(msg))  →  响应返回
 | 双流模式 | SSE 推事件 + HTTP Stream 传结果 | 实时进度与最终状态解耦 |
 | 向下代理 | 未匹配路径 → app.opencode.ai | 一个端口提供完整 Web 体验 |
 
----
+## 本章小结
+
+### 关键代码位置
+
+| 模块 | 位置 | 建议关注点 |
+| --- | --- | --- |
+| 服务器工厂 | `packages/opencode/src/server/server.ts` | `createApp`、中间件顺序、CORS 白名单 |
+| Session 路由 | `packages/opencode/src/server/routes/session.ts` | CRUD、流式端点、fork/revert |
+| 错误体系 | `packages/opencode/src/server/error.ts` | `NamedError`、`errors()` 辅助函数 |
+| 服务器启动 | `packages/opencode/src/server/server.ts` | `listen()`、端口降级、mDNS 广播 |
+| mDNS | `packages/opencode/src/server/mdns.ts` | 局域网服务发现 |
+
+### 源码阅读路径
+
+1. 先读 `server.ts` 的 `createApp`，画出中间件链顺序图。
+2. 再读 `routes/session.ts`，找出 `GET /event` 和 `POST /:id/message` 两个核心端点。
+3. 对照第5章的 `SessionPrompt.prompt()`，理解 AI 处理和 HTTP 响应的配合关系。
 
 **思考题**：
 
@@ -530,8 +598,40 @@ stream.write(JSON.stringify(msg))  →  响应返回
 
 3. `GET /event` 中的 10 秒心跳是维持连接活性的手段。如果客户端断线重连，它会错过这期间的事件吗？OpenCode 应该如何设计来解决这个问题？
 
----
-
-**下一章预告**
+## 下一章预告
 
 第10章：**数据持久化** — 深入 `packages/opencode/src/storage/`，学习：SQLite + Drizzle ORM 的 schema 设计、消息与 Part 的存储结构、SQLite JSON 列的查询技巧、数据库迁移策略，以及 KV 存储的分层缓存设计。
+
+---
+
+<SourceSnapshotCard
+  title="第9章源码快照"
+  description="这一章的核心是 createApp 的中间件链：每一层如何只做一件事，以及 SSE 广播与 HTTP Stream 如何协作支撑实时 AI 交互。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: '服务器入口',
+      path: 'packages/opencode/src/server/server.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/server/server.ts'
+    },
+    {
+      label: 'Session 路由',
+      path: 'packages/opencode/src/server/routes/session.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/server/routes/session.ts'
+    },
+    {
+      label: '错误处理辅助',
+      path: 'packages/opencode/src/server/error.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/server/error.ts'
+    },
+    {
+      label: 'mDNS 服务发现',
+      path: 'packages/opencode/src/server/mdns.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/server/mdns.ts'
+    }
+  ]"
+/>

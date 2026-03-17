@@ -1,6 +1,6 @@
 ---
-title: 第十四篇：测试与质量保证
-description: 第十四篇：测试与质量保证的详细内容
+title: 第15章：测试与质量保证
+description: 按系统边界分层的测试体系：核心运行时（Bun Test）、共享前端状态层（Happy DOM 单测）和真实用户流程（Playwright E2E）如何各司其职
 ---
 
 <script setup>
@@ -12,38 +12,6 @@ import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshot
 > **学习目标**：理解 OpenCode 的质量保障不是“写几条单元测试”，而是把核心运行时、前端状态层和真实用户流程拆成不同测试面，再用类型检查和脚本约束收口
 
 ---
-
-<SourceSnapshotCard
-  title="第十四篇源码快照"
-  description="这一篇先抓测试面是怎么按系统边界拆开的：核心运行时、前端状态层和真实用户流程分别由哪套夹具和入口来兜底。"
-  repo="anomalyco/opencode"
-  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  branch="dev"
-  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
-  verified-at="2026-03-15"
-  :entries="[
-    {
-      label: '核心测试夹具',
-      path: 'packages/opencode/test/fixture/fixture.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/test/fixture/fixture.ts'
-    },
-    {
-      label: '核心测试入口',
-      path: 'packages/opencode/test/bun.test.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/test/bun.test.ts'
-    },
-    {
-      label: '前端单测环境',
-      path: 'packages/app/happydom.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/happydom.ts'
-    },
-    {
-      label: 'E2E 夹具',
-      path: 'packages/app/e2e/fixtures.ts',
-      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/e2e/fixtures.ts'
-    }
-  ]"
-/>
 
 ```mermaid
 graph TB
@@ -135,7 +103,7 @@ packages/opencode/test 验证核心运行时
 - 质量保障不只靠测试文件，还依赖类型检查、脚本约束和统一夹具。
 - 真实 Agent 项目最难测的往往是时序、资源隔离和恢复路径，不只是函数返回值。
 
-## 14.1 核心运行时测试：`packages/opencode/test/`
+## 15.1 核心运行时测试：`packages/opencode/test/`
 
 ### 先看范围，它远不只是几个工具测试
 
@@ -208,7 +176,7 @@ packages/opencode/test 验证核心运行时
 
 ---
 
-## 14.2 前端单元测试：`packages/app/src/**/*.test.ts(x)`
+## 15.2 前端单元测试：`packages/app/src/**/*.test.ts(x)`
 
 ### 这一层经常被忽略，但现在已经很厚
 
@@ -264,7 +232,7 @@ packages/opencode/test 验证核心运行时
 
 ---
 
-## 14.3 E2E 测试：验证真实用户流程，而不是替代全部测试
+## 15.3 E2E 测试：验证真实用户流程，而不是替代全部测试
 
 ### Playwright 这里测的是“一个完整会话产品到底能不能用”
 
@@ -338,7 +306,7 @@ packages/opencode/test 验证核心运行时
 
 ---
 
-## 14.4 当前仓库更强调回归、时序和资源安全，而不是单独的 benchmark 套件
+## 15.4 当前仓库更强调回归、时序和资源安全，而不是单独的 benchmark 套件
 
 ### 不要把它讲成“有专门性能实验室”
 
@@ -382,7 +350,7 @@ packages/opencode/test 验证核心运行时
 
 ---
 
-## 14.5 质量门槛不只靠测试，还靠脚本和类型系统收口
+## 15.5 质量门槛不只靠测试，还靠脚本和类型系统收口
 
 ### `typecheck` 是每个包自己的门槛
 
@@ -475,13 +443,47 @@ packages/opencode/test 验证核心运行时
 - 为什么时序、恢复和资源隔离这类问题必须进入回归范围。
 - 为什么统一夹具和脚本约束，对长链路系统和单条测试用例同样重要。
 
-### 下一篇预告
-
-下一篇会回到更抽象但也更关键的一层，也就是高级主题和最佳实践。  
-到那时你会更容易把前面这些架构、工具、UI、存储和测试经验收束成一套可迁移的方法论。
-
 ### 思考题
 
-1. 为什么 Agent 项目的测试更适合按“运行时 / 前端共享层 / 真实用户流程”分层，而不是全压给 E2E？
+1. 为什么 Agent 项目的测试更适合按”运行时 / 前端共享层 / 真实用户流程”分层，而不是全压给 E2E？
 2. 哪类问题更适合写进 `packages/opencode/test`，哪类问题更适合写进 `packages/app/e2e`？
 3. 对这种长链路系统来说，为什么时序、恢复和资源隔离往往比单个函数正确性更值得回归？
+
+## 下一章预告
+
+下一篇会回到更抽象但也更关键的一层，也就是高级主题和最佳实践。
+到那时你会更容易把前面这些架构、工具、UI、存储和测试经验收束成一套可迁移的方法论。
+
+---
+
+<SourceSnapshotCard
+  title="第15章源码快照"
+  description="这一章先抓测试面是怎么按系统边界拆开的：核心运行时、前端状态层和真实用户流程分别由哪套夹具和入口来兜底。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: '核心测试夹具',
+      path: 'packages/opencode/test/fixture/fixture.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/test/fixture/fixture.ts'
+    },
+    {
+      label: '核心测试入口',
+      path: 'packages/opencode/test/bun.test.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/test/bun.test.ts'
+    },
+    {
+      label: '前端单测环境',
+      path: 'packages/app/happydom.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/happydom.ts'
+    },
+    {
+      label: 'E2E 夹具',
+      path: 'packages/app/e2e/fixtures.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/e2e/fixtures.ts'
+    }
+  ]"
+/>

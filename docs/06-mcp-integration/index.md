@@ -3,10 +3,42 @@ title: 第7章：MCP 协议集成
 description: 深入 MCP 客户端实现——local/remote 两种连接方式、工具发现与转换、OAuth 认证、资源与提示词管理
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：理解 MCP 协议的设计思想，掌握 OpenCode 作为 MCP Client 的完整实现，学会配置和调试 MCP Server
 > **前置知识**：第6章"多模型支持"
 > **源码路径**：`packages/opencode/src/mcp/`
 > **阅读时间**：20 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+内置工具有限，用户需求无限。MCP 是解决方案——定义了一个标准协议，让第三方工具服务器接入 OpenCode，不需要修改 OpenCode 核心代码。
+
+### 必看入口
+
+mcp/index.ts（MCP 客户端，连接管理和工具发现）
+
+### 先抓一条主链路
+
+`读取配置中的 mcpServers → 按 type 选 StdioClientTransport 或 SSEClientTransport → 连接 MCP Server → 调用 tools/list 发现工具 → 转换成 Tool.Info 格式 → 注入工具注册表 → Agent 可调用`
+
+### 初学者阅读顺序
+
+1. 先读本章 7.1 节，理解 MCP 的角色分工。
+2. 打开 mcp/index.ts，找 connect() 函数——这是一切的起点。
+3. 找到工具转换逻辑，看 MCP Tool 如何转成 OpenCode 的 Tool.Info。
+4. 如果对 OAuth 感兴趣，再读 oauth.ts。
+5. 最后看 config.ts 中 mcpServers 的配置格式。
+
+### 最容易误解的点
+
+OpenCode 是 MCP Client，不是 MCP Server。它不对外暴露工具，而是连接别人的 MCP Server 来获取工具。很多初学者以为 OpenCode 实现了一个 MCP Server——正好相反。
 
 ---
 
@@ -588,3 +620,21 @@ MCP 集成的三层结构：
 - TUI 如何订阅 Bus 事件实时更新界面
 - 键盘导航与交互设计
 - OpenTUI 组件库的使用方式
+
+---
+
+<SourceSnapshotCard
+  title="第7章源码快照"
+  description="MCP 让 OpenCode 的工具系统向外部开放。mcp/index.ts 是客户端核心，负责连接管理、工具发现和转换。OpenCode 是 MCP Client，不是 MCP Server。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    { label: 'MCP 客户端核心', path: 'packages/opencode/src/mcp/index.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/mcp/index.ts' },
+    { label: 'OAuth 认证', path: 'packages/opencode/src/mcp/oauth.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/mcp/oauth.ts' },
+    { label: 'MCP 配置 Schema', path: 'packages/opencode/src/config/config.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/config/config.ts' },
+    { label: '工具注册表（MCP 工具注入点）', path: 'packages/opencode/src/tool/registry.ts', href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/tool/registry.ts' },
+  ]"
+/>

@@ -3,7 +3,57 @@ title: 第11章：多端 UI 开发
 description: Web 应用、桌面端与 TUI 共用同一 HTTP API 的架构设计：SolidJS Provider 树、Platform 抽象、Tauri Sidecar 模式与事件批处理
 ---
 
-## 三个客户端，一个服务器
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
+> **对应路径**：`packages/app/src/`、`packages/desktop/src/`
+> **前置阅读**：第9章 HTTP API 服务器、第8章 TUI 终端界面
+> **学习目标**：理解 Web 应用和桌面端如何共用同一套 SolidJS UI，以及 Platform 抽象如何隔离平台差异
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+这一章要回答的是：
+
+- 为什么 Web App 和桌面端能共用 99% 的 UI 代码
+- GlobalSDKProvider 的 16ms 批处理窗口如何解决 token 风暴问题
+- Platform 接口如何让 UI 代码不需要写 `if (isTauri())` 判断
+- Tauri Sidecar 模式和传统桌面应用有什么区别
+
+### 必看入口
+
+- [packages/app/src/app.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/app/src/app.tsx)：Provider 树三层结构（应用级/目录级/会话级）
+- [packages/app/src/context/global-sdk.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/app/src/context/global-sdk.tsx)：SSE 连接循环、心跳超时、事件批处理
+- [packages/app/src/platform.tsx](https://github.com/anomalyco/opencode/blob/dev/packages/app/src/platform.tsx)：Platform 接口定义
+
+### 先抓一条主链路
+
+```text
+服务器发出 SSE 事件
+  -> GlobalSDKProvider 接收 -> 加入队列
+  -> 16ms 批处理定时器触发
+  -> 事件合并（相同 key 保留最新）
+  -> SolidJS batch() 合并信号更新
+  -> 组件重渲（最多 60fps）
+```
+
+### 初学者阅读顺序
+
+1. 先读 `app.tsx`，理解三层 Provider 的职责边界。
+2. 再读 `global-sdk.tsx`，追踪一个 SSE 事件从接收到 UI 更新的完整路径。
+3. 最后读 `platform.tsx` 和 `packages/desktop/src/bindings.ts`，理解平台差异如何被封装。
+
+### 最容易误解的点
+
+- `GlobalSDKProvider` 不只是"连接 SSE"，它还负责批处理、事件合并和心跳超时检测。
+- Platform 抽象不是运行时 polyfill，而是在构建/注入时决定使用哪个实现。
+- Tauri 桌面端的 AI 逻辑仍然在 `opencode serve` 进程里，Tauri 只是壳层。
+
+## 11.1 三个客户端，一个服务器
 
 第8章介绍了 OpenCode 的 HTTP API 服务器。现在我们来看另一侧：有哪些客户端消费这个 API？
 
@@ -55,7 +105,7 @@ graph TB
     style CORE fill:#065f46,color:#fff
 ```
 
-## packages/app：共享 Web UI
+## 11.2 packages/app：共享 Web UI
 
 `packages/app` 是同时被 Web 发布版和 Tauri 桌面端使用的 SolidJS 应用。它的架构值得深入分析。
 
@@ -173,7 +223,7 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean }>) {
 
 `blocking` 模式下还强制等待 1.2 秒，确保启动动画有足够时间显示。`ConnectionError` 组件每秒自动重试，并展示其他可用服务器列表供用户手动切换。
 
-## GlobalSDKProvider：SSE 连接的工程实现
+## 11.3 GlobalSDKProvider：SSE 连接的工程实现
 
 `global-sdk.tsx` 是整个 Web UI 最核心的部分，管理与服务器的实时连接。
 
@@ -293,7 +343,7 @@ if (payload.type === "message.part.updated") {
 // flush 时跳过所有过期的 delta 事件
 ```
 
-## Platform 抽象：Web 与桌面的能力差异
+## 11.4 Platform 抽象：Web 与桌面的能力差异
 
 `platform.tsx` 定义了一个关键接口，它让 UI 代码不需要直接调用 `window.open` 或 Tauri API：
 
@@ -360,7 +410,7 @@ function MarkedProviderWithNativeParser(props: ParentProps) {
 }
 ```
 
-## packages/desktop：Tauri 桌面端架构
+## 11.5 packages/desktop：Tauri 桌面端架构
 
 `packages/desktop` 是 Tauri 应用的 TypeScript 前端层，它加载 `packages/app` 的构建产物作为 WebView 内容。
 
@@ -455,7 +505,7 @@ export async function installCli(): Promise<void> {
 
 这正是 Platform 抽象的价值：UI 代码完全不需要关心底层用的是哪个解析器。
 
-## SyncProvider：per-session 状态管理
+## 11.6 SyncProvider：per-session 状态管理
 
 `sync.tsx` 负责为每个工作目录管理消息和 Part 的本地状态：
 
@@ -502,7 +552,7 @@ dropSessionCaches(...)
 
 被淘汰的会话再次访问时，会重新从服务器 API 加载数据。
 
-## 三端架构对比
+## 11.7 三端架构对比
 
 | 维度 | TUI | Web App | 桌面端 |
 |------|-----|---------|--------|
@@ -514,7 +564,7 @@ dropSessionCaches(...)
 | 更新 | 包管理器 | 服务端部署 | Tauri Updater |
 | 鉴权存储 | 不需要 | localStorage | Tauri SecureStorage |
 
-## 关键设计总结
+## 11.8 关键设计总结
 
 OpenCode 多端 UI 的核心架构决策：
 
@@ -526,7 +576,24 @@ OpenCode 多端 UI 的核心架构决策：
 
 4. **桌面端 = WebView + Sidecar**：Tauri 不需要把 AI 逻辑用 Rust 重写，sidecar 模式让 TypeScript 代码在桌面应用中完整复用。`bindings.ts` 由 Tauri Specta 自动生成，保证 Rust-TypeScript 接口类型安全。
 
----
+## 本章小结
+
+### 关键代码位置
+
+| 模块 | 位置 | 建议关注点 |
+| --- | --- | --- |
+| 应用入口 | `packages/app/src/app.tsx` | 三层 Provider 树、`AppInterface` 组件 |
+| SSE 管理 | `packages/app/src/context/global-sdk.tsx` | 批处理、事件合并、心跳超时 |
+| Platform 接口 | `packages/app/src/platform.tsx` | 能力声明、可选字段模式 |
+| SyncProvider | `packages/app/src/context/sync.tsx` | 乐观更新、LRU 缓存淘汰 |
+| Tauri 绑定 | `packages/desktop/src/bindings.ts` | `awaitInitialization`、`parseMarkdownCommand` |
+| 连接守卫 | `packages/app/src/context/connection-gate.tsx` | 健康检查、1.2 秒最短启动动画 |
+
+### 源码阅读路径
+
+1. 先读 `app.tsx`，对照三层 Provider 理解每层的生命周期。
+2. 再读 `global-sdk.tsx`，找到 `flush()` 和 `schedule()` 函数，理解批处理机制。
+3. 对照第9章的 `GET /event` SSE 端点，把服务端推送和客户端接收串联起来。
 
 **思考题**：
 
@@ -536,8 +603,40 @@ OpenCode 多端 UI 的核心架构决策：
 
 3. Sidecar 模式让桌面端运行一个本地 HTTP 服务器。这带来了什么安全问题？`OPENCODE_SERVER_PASSWORD` 的设计如何缓解这个问题？
 
----
-
-**下一章预告**
+## 下一章预告
 
 第12章：**代码智能** — 深入 `packages/opencode/src/lsp/`，学习：LSP（Language Server Protocol）的客户端实现、诊断信息如何注入到 AI 提示词、代码高亮与符号导航的工程细节，以及 LSP 与工具系统的协作方式。
+
+---
+
+<SourceSnapshotCard
+  title="第11章源码快照"
+  description="这一章的核心是 GlobalSDKProvider 的事件批处理和 Platform 抽象：16ms 批处理窗口如何防止 token 风暴，以及 Tauri Sidecar 如何让桌面端复用 TypeScript 业务代码。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-15"
+  :entries="[
+    {
+      label: '应用入口',
+      path: 'packages/app/src/app.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/src/app.tsx'
+    },
+    {
+      label: 'GlobalSDKProvider（SSE 连接）',
+      path: 'packages/app/src/context/global-sdk.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/src/context/global-sdk.tsx'
+    },
+    {
+      label: 'Platform 抽象',
+      path: 'packages/app/src/platform.tsx',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/app/src/platform.tsx'
+    },
+    {
+      label: 'Tauri Bindings（自动生成）',
+      path: 'packages/desktop/src/bindings.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/desktop/src/bindings.ts'
+    }
+  ]"
+/>

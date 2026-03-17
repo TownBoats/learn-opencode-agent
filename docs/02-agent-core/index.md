@@ -3,9 +3,41 @@ title: 第3章：OpenCode 项目介绍
 description: 建立 OpenCode 源码地图——从项目定位到代码路径，理解一个真实 AI Coding Agent 的工程结构
 ---
 
+<script setup>
+import SourceSnapshotCard from '../../.vitepress/theme/components/SourceSnapshotCard.vue'
+</script>
+
 > **学习目标**：建立 OpenCode 的整体代码地图，把第2章的5个概念组件对应到真实源码位置
 > **前置知识**：第2章"AI Agent 的核心组件"
 > **阅读时间**：20 分钟
+
+---
+
+## 本章导读
+
+### 这一章解决什么问题
+
+源码焦虑。当你第一次打开一个有数十个目录、数百个文件的大仓库，不知道从哪开始。这一章给你一张地图——告诉你哪些是核心、哪些是外围、各模块怎么连接。
+
+### 必看入口
+
+index.ts（CLI 命令解析入口）、server.ts（HTTP API 服务器）
+
+### 先抓一条主链路
+
+`packages/opencode/src/index.ts → 解析 CLI 命令 → 启动 server 或直接运行 agent → server.ts 注册路由 → agent.ts 处理请求 → processor.ts 执行循环`
+
+### 初学者阅读顺序
+
+1. 先读本章，把模块依赖图打印出来贴在旁边。
+2. 打开 index.ts，数一数有多少个子命令。
+3. 打开 server.ts，看有哪些路由。
+4. 找到 agent.ts，这是所有子命令汇聚的地方。
+5. 其余模块按后续各章按需深入。
+
+### 最容易误解的点
+
+packages/app（Web UI）和 packages/opencode（核心逻辑）是两个独立进程——app 通过 HTTP 调用 opencode 的 server，不是直接调用函数。理解这个分离，是理解整个架构的关键。
 
 ---
 
@@ -496,3 +528,37 @@ index.ts → cli/cmd/run.ts
 - `registry.ts` 如何注册和过滤工具
 - `bash`、`edit`、`grep` 等核心工具的实现细节
 - 权限系统如何控制工具访问
+
+---
+
+<SourceSnapshotCard
+  title="第3章源码地图"
+  description="这一章是代码导航章。这里列出的不是最重要的文件，而是最有代表性的入口——从这四个文件出发，你能找到整个仓库 80% 的重要逻辑。"
+  repo="anomalyco/opencode"
+  repo-url="https://github.com/anomalyco/opencode/tree/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  branch="dev"
+  commit="f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc"
+  verified-at="2026-03-17"
+  :entries="[
+    {
+      label: 'CLI 主入口',
+      path: 'packages/opencode/src/index.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/index.ts'
+    },
+    {
+      label: 'Server 路由入口',
+      path: 'packages/opencode/src/server/server.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/server/server.ts'
+    },
+    {
+      label: 'Agent 启动逻辑',
+      path: 'packages/opencode/src/agent/agent.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/agent/agent.ts'
+    },
+    {
+      label: '工具注册表',
+      path: 'packages/opencode/src/tool/registry.ts',
+      href: 'https://github.com/anomalyco/opencode/blob/f8475649da1cd7a6d49f8f30ee2fad374c2f4fcc/packages/opencode/src/tool/registry.ts'
+    }
+  ]"
+/>
