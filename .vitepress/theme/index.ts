@@ -9,6 +9,9 @@ import McpHandshake from './components/McpHandshake.vue'
 import SseBroadcast from './components/SseBroadcast.vue'
 import ContextCompaction from './components/ContextCompaction.vue'
 import ProviderFallback from './components/ProviderFallback.vue'
+import WorkflowVsAgent from './components/WorkflowVsAgent.vue'
+import LspHover from './components/LspHover.vue'
+import ConnectionGate from './components/ConnectionGate.vue'
 import './custom.css'
 
 export default {
@@ -22,5 +25,8 @@ export default {
     app.component('SseBroadcast', SseBroadcast)
     app.component('ContextCompaction', ContextCompaction)
     app.component('ProviderFallback', ProviderFallback)
+    app.component('WorkflowVsAgent', WorkflowVsAgent)
+    app.component('LspHover', LspHover)
+    app.component('ConnectionGate', ConnectionGate)
   }
 } satisfies Theme

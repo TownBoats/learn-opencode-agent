@@ -173,6 +173,8 @@ graph LR
 | 记忆能力 | ❌ | ✅ | ✅ |
 | 任务规划 | ❌ | ✅（人工） | ✅（自动） |
 
+<WorkflowVsAgent />
+
 ---
 
 ## 1.3 AI Agent 的核心能力

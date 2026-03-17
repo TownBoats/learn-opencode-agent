@@ -223,6 +223,8 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean }>) {
 
 `blocking` 模式下还强制等待 1.2 秒，确保启动动画有足够时间显示。`ConnectionError` 组件每秒自动重试，并展示其他可用服务器列表供用户手动切换。
 
+<ConnectionGate />
+
 ## 11.3 GlobalSDKProvider：SSE 连接的工程实现
 
 `global-sdk.tsx` 是整个 Web UI 最核心的部分，管理与服务器的实时连接。

@@ -89,6 +89,8 @@ sequenceDiagram
     end
 ```
 
+<LspHover />
+
 ## 12.2 LSP 子系统的整体架构
 
 ```
