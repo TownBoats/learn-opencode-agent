@@ -227,6 +227,10 @@ OpenCode 当前还有一条很值得学的经验：
 
 这比“把历史全塞给模型，再希望模型自己忽略”要成熟得多。
 
+**上下文压缩动画：** 观察 token 计数如何逼近上限、isOverflow() 如何触发、旧工具输出如何折叠，以及摘要生成后窗口空间如何释放。
+
+<ContextCompaction />
+
 ### 工具输出裁剪是另一条同样重要的成本线
 
 [packages/opencode/src/tool/truncation.ts](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/truncation.ts) 体现了另一条非常强的产品意识：

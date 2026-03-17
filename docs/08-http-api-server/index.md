@@ -403,6 +403,10 @@ SSE（Server-Sent Events）协议格式非常简单：每条消息以 `data: <co
 
 **为什么这样设计？** 因为 AI 处理的中间过程（每个 token、每个工具调用）已经通过 SSE 事件总线广播了。已连接 `/event` 的客户端会实时看到进度；而 `POST /session/:id/message` 只需要在结束时返回最终结果供调用方记录。这是关注点分离的典型体现。
 
+**SSE 广播动画：** 观察 processor.ts 产生的每个事件如何同时推送到 TUI、Web、Desktop 三个客户端。
+
+<SseBroadcast />
+
 对于不需要等待结果的场景，还有 `POST /session/:id/prompt_async`，它直接返回 204 并在后台异步运行：
 
 ```typescript

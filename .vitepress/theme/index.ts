@@ -6,6 +6,9 @@ import StreamingDemo from './components/StreamingDemo.vue'
 import MessageAccumulator from './components/MessageAccumulator.vue'
 import PermissionFlow from './components/PermissionFlow.vue'
 import McpHandshake from './components/McpHandshake.vue'
+import SseBroadcast from './components/SseBroadcast.vue'
+import ContextCompaction from './components/ContextCompaction.vue'
+import ProviderFallback from './components/ProviderFallback.vue'
 import './custom.css'
 
 export default {
@@ -16,5 +19,8 @@ export default {
     app.component('MessageAccumulator', MessageAccumulator)
     app.component('PermissionFlow', PermissionFlow)
     app.component('McpHandshake', McpHandshake)
+    app.component('SseBroadcast', SseBroadcast)
+    app.component('ContextCompaction', ContextCompaction)
+    app.component('ProviderFallback', ProviderFallback)
   }
 } satisfies Theme

@@ -524,6 +524,10 @@ function wrapSSE(res: Response, ms: number, ctl: AbortController) {
 
 120秒内如果没有新数据——不是任务完成，就是连接断了——触发中止，`processor.ts` 的重试机制接管。
 
+**限流重试动画：** 演示 429 限流响应 → retryable() 分类 → retry-after 倒计时 → 重试成功的完整路径，以及哪些错误会被判定为不可重试。
+
+<ProviderFallback />
+
 ---
 
 ## 6.8 自定义提供商与模型
