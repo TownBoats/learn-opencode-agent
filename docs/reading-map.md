@@ -126,11 +126,33 @@ import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifec
 3. [第十一篇：代码智能](/11-code-intelligence/index)
 4. [第十二篇：插件与扩展](/12-plugins-extensions/index)
 
-这条线的目标，是看懂“交互层和扩展层怎样让 Agent 真正可用”。
+这条线的目标，是看懂”交互层和扩展层怎样让 Agent 真正可用”。
+
+### 路线 D：从插件到多模型编排（oh-my-openagent）
+
+适合：
+
+- 已经理解 OpenCode 基础架构（至少读完前 4 章）
+- 想知道如何通过插件扩展 OpenCode 的能力
+- 对多模型编排、Agent 协作的工程实现感兴趣
+- 想动手添加自己的 Agent、工具或 Hook
+
+建议顺序：
+
+1. [第17章：为什么需要多个 Agent？](/oh-prelude/)
+2. [第18章：插件系统概述](/16-plugin-overview/)
+3. [第19章：配置系统实战](/oh-config/)
+4. [第20章：多模型编排系统](/17-multi-model-orchestration/)
+5. [第21章：Hooks 三层架构](/18-hooks-architecture/)
+6. [第22章：工具扩展系统](/19-tool-extension/)
+7. [第23章：一条消息的完整旅程](/oh-flow/)
+8. [第24章：实战案例与最佳实践](/20-best-practices/)
+
+这条线的目标，是看懂”一个生产级 OpenCode 插件如何组织多 Agent 协作”，并能动手扩展它。
 
 ## 章节依赖关系
 
-如果你只想知道“某一篇之前至少该看什么”，可以按下面这张简化依赖图走：
+如果你只想知道”某一篇之前至少该看什么”，可以按下面这张简化依赖图走：
 
 ```text
 01 -> 02 -> 03 -> 04
@@ -143,6 +165,10 @@ import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifec
 01 + 08 + 10 -> 13
 03 + 08 + 10 -> 14
 02 + 03 + 04 + 14 -> 15
+
+# 第五部分（oh-my-openagent）
+12 -> oh-prelude -> 16-plugin-overview -> oh-config
+oh-config -> 17-multi-model -> 18-hooks -> 19-tool -> oh-flow -> 20-best-practices
 ```
 
 ## 如果你时间有限
@@ -180,3 +206,5 @@ import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifec
 3. 看完一篇，再决定要不要继续深入代码细节
 
 如果你已经准备好了，建议从 [第一篇：Agent 基础架构](/01-agent-basics/index) 开始。
+
+如果你已经读完前四篇，想看真实插件案例，直接跳到 [第17章：为什么需要多个 Agent？](/oh-prelude/)。

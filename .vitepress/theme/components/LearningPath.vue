@@ -52,6 +52,23 @@ const phases: LearningPhase[] = [
       { name: '14 测试与质量保证', link: '/14-testing-quality/index' },
       { name: '15 高级主题与最佳实践', link: '/15-advanced-topics/index' }
     ]
+  },
+  {
+    number: '阶段 5',
+    title: '扩展：oh-my-openagent 插件系统',
+    description: '以真实插件项目为案例，理解多 Agent 编排、Hook 分层架构和工具扩展的工程实现。',
+    goal: '把插件接口、Agent 工厂、Hook 三层和工具注册放到同一张图里，理解它们如何协作。',
+    outcome: '看完后你应该能解释：oh-my-openagent 如何通过 OpenCode 插件接口实现多模型编排，并能独立添加新的 Agent、工具或 Hook。',
+    chapters: [
+      { name: '第17章 为什么需要多个 Agent？', link: '/oh-prelude/' },
+      { name: '第18章 插件系统概述', link: '/16-plugin-overview/' },
+      { name: '第19章 配置系统实战', link: '/oh-config/' },
+      { name: '第20章 多模型编排系统', link: '/17-multi-model-orchestration/' },
+      { name: '第21章 Hooks 三层架构', link: '/18-hooks-architecture/' },
+      { name: '第22章 工具扩展系统', link: '/19-tool-extension/' },
+      { name: '第23章 一条消息的完整旅程', link: '/oh-flow/' },
+      { name: '第24章 实战案例与最佳实践', link: '/20-best-practices/' }
+    ]
   }
 ]
 </script>

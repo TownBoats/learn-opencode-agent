@@ -115,6 +115,20 @@ export default withMermaid(defineConfig({
           { text: '第16章：高级主题与最佳实践', link: '/15-advanced-topics/' },
         ]
       },
+      {
+        text: '第五部分：oh-my-openagent 插件系统',
+        collapsed: false,
+        items: [
+          { text: '第17章：为什么需要多个 Agent？', link: '/oh-prelude/' },
+          { text: '第18章：插件系统概述', link: '/16-plugin-overview/' },
+          { text: '第19章：配置系统实战', link: '/oh-config/' },
+          { text: '第20章：多模型编排系统', link: '/17-multi-model-orchestration/' },
+          { text: '第21章：Hooks 三层架构', link: '/18-hooks-architecture/' },
+          { text: '第22章：工具扩展系统', link: '/19-tool-extension/' },
+          { text: '第23章：一条消息的完整旅程', link: '/oh-flow/' },
+          { text: '第24章：实战案例与最佳实践', link: '/20-best-practices/' },
+        ]
+      },
     ],
 
     socialLinks: [

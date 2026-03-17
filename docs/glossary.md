@@ -249,3 +249,81 @@ OpenCode 的记忆机制：
 - 不替未落地能力做脑补
 
 这是本书最重要的写作约束之一。
+
+---
+
+## oh-my-openagent 专有术语
+
+以下术语仅在本书第五部分（oh-my-openagent 插件系统）中使用。
+
+## AgentFactory
+
+`AgentFactory` 是 oh-my-openagent 定义内置 Agent 的工厂函数模式：
+
+```typescript
+type AgentFactory = {
+  (model: string): AgentConfig
+  mode: AgentMode  // "primary" | "subagent" | "all"
+}
+```
+
+工厂函数接受模型名，返回完整的 Agent 配置。`mode` 属性挂在函数上，表示该 Agent 可在哪种上下文中被调用。
+
+详见：第20章 §2
+
+## Background Agent（后台 Agent）
+
+`Background Agent` 指在独立 OpenCode 子会话中异步执行的 Agent 任务。它与主对话并行运行，完成后通过 `session.idle` 事件通知父会话。
+
+区分：
+- **同步委托**：主 Agent 等待子任务完成（`wait_for_result: true`）
+- **异步委托**：主 Agent 继续工作，子任务在后台进行（`wait_for_result: false`）
+
+详见：第20章 §4
+
+## ToolGuard
+
+`ToolGuard` 是 oh-my-openagent 在 `tool.execute.before` Hook 中运行的权限检查机制。它根据每个 Agent 配置的 `deniedTools` 字段，在代码层面阻止越权工具调用。
+
+这是代码级约束，不依赖 prompt 描述——即使 prompt 没有说"不能写文件"，`deniedTools: ["write"]` 也会强制阻止。
+
+详见：第22章 §4
+
+## hashline-edit
+
+`hashline-edit` 是 oh-my-openagent 的精确文件编辑工具。它在读取文件时给每行加上基于内容的哈希标识（`LINE#ID`），编辑时引用该标识而非行号，从而避免"幻觉对齐"问题（AI 引用了不存在的内容）。
+
+区分：
+- **传统 edit**：基于 old_string/new_string 匹配，文件变化后容易失败
+- **hashline-edit**：基于内容哈希锁定，验证后再写入，失败时自动重试
+
+详见：第22章 §2
+
+## Hook（钩子）
+
+oh-my-openagent 语境下的 `Hook` 是插件注册到 OpenCode 生命周期事件的回调函数。与第13章"插件 Hook"的区别：
+
+- **第13章**：讲 OpenCode 原生插件接口暴露的 8 个 Hook 点
+- **第五部分**：讲 oh-my-openagent 内部实现的 46 个 Hook，它们挂载在这 8 个 Hook 点上
+
+46 个 Hook 分三层：Core（37个）→ Continuation（7个）→ Skill（2个）。
+
+详见：第21章
+
+## Plugin Interface（插件接口）
+
+`Plugin Interface` 是 oh-my-openagent 返回给 OpenCode 运行时的对象，包含 8 个方法（Hook 点）。OpenCode 在不同阶段调用这些方法，插件通过它们拦截和增强系统行为。
+
+区分：
+- **Plugin 函数**：只在插件加载时执行一次
+- **Plugin Interface 方法**：在每次对话/事件时被反复调用
+
+详见：第18章 §3
+
+## 分类（Category）
+
+`Category` 是 oh-my-openagent 的任务路由机制。Sisyphus 在委托任务时，可以委托给"分类"而不是具体 Agent，系统根据 `categories` 配置选择对应的模型和 Agent。
+
+常见分类：`frontend`、`backend`、`exploration`、`review`。
+
+详见：第20章 §3，第19章
