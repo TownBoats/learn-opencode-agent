@@ -18,6 +18,11 @@ import BackgroundTaskDemo from './components/BackgroundTaskDemo.vue'
 import RuntimeFallbackDemo from './components/RuntimeFallbackDemo.vue'
 import HashlineEditDemo from './components/HashlineEditDemo.vue'
 import TaskDelegationDemo from './components/TaskDelegationDemo.vue'
+import PracticeTerminalHero from './components/PracticeTerminalHero.vue'
+import PracticePhaseGrid from './components/PracticePhaseGrid.vue'
+import PracticeTagCloud from './components/PracticeTagCloud.vue'
+import ProjectCard from './components/ProjectCard.vue'
+import RunCommand from './components/RunCommand.vue'
 import './custom.css'
 
 export default {
@@ -40,5 +45,10 @@ export default {
     app.component('RuntimeFallbackDemo', RuntimeFallbackDemo)
     app.component('HashlineEditDemo', HashlineEditDemo)
     app.component('TaskDelegationDemo', TaskDelegationDemo)
+    app.component('PracticeTerminalHero', PracticeTerminalHero)
+    app.component('PracticePhaseGrid', PracticePhaseGrid)
+    app.component('PracticeTagCloud', PracticeTagCloud)
+    app.component('ProjectCard', ProjectCard)
+    app.component('RunCommand', RunCommand)
   }
 } satisfies Theme
