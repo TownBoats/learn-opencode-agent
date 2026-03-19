@@ -1,0 +1,129 @@
+<h2>实践篇首页设计稿</h2>
+<p class="subtitle">Section 2：终端风格首页的具体视觉方案</p>
+
+<div class="mockup">
+  <div class="mockup-header">http://localhost:5173/practice/ — 实践篇首页预览</div>
+  <div class="mockup-body" style="background: #0c0a09; padding: 0; overflow: hidden; border-radius: 0 0 8px 8px;">
+
+    <!-- Nav bar -->
+    <div style="background: #1c1917; border-bottom: 1px solid #292524; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span style="color: #0d9488; font-size: 13px; font-weight: bold; font-family: monospace;">从零构建 AI Coding Agent</span>
+        <span style="color: #44403c; font-size: 12px;">|</span>
+        <span style="color: #f97316; font-size: 12px; font-family: monospace; border-bottom: 1px solid #f97316; padding-bottom: 1px;">实践篇</span>
+        <span style="color: #78716c; font-size: 12px;">阅读地图</span>
+        <span style="color: #78716c; font-size: 12px;">术语表</span>
+      </div>
+      <div style="color: #78716c; font-size: 11px; font-family: monospace;">⭐ GitHub</div>
+    </div>
+
+    <!-- Hero -->
+    <div style="padding: 40px 32px 28px; text-align: center; position: relative; overflow: hidden;">
+      <!-- 背景网格装饰 -->
+      <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(249,115,22,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.05) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none;"></div>
+
+      <!-- 终端窗口 Hero -->
+      <div style="background: #1c1917; border: 1px solid #292524; border-radius: 8px; padding: 16px 20px; max-width: 520px; margin: 0 auto 20px; text-align: left; position: relative;">
+        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+          <span style="color: #57534e; font-size: 11px; margin-left: 8px; font-family: monospace;">agent-workshop ~ bash</span>
+        </div>
+        <div style="font-family: monospace; font-size: 12px; line-height: 1.8;">
+          <div style="color: #78716c;">$ <span style="color: #f97316;">bun</span> run p01-minimal-agent.ts</div>
+          <div style="color: #86efac;">✓ Anthropic SDK initialized</div>
+          <div style="color: #86efac;">✓ Tool registered: <span style="color: #fbbf24;">get_weather</span></div>
+          <div style="color: #93c5fd;">Agent: 我需要查询北京的天气...</div>
+          <div style="color: #d1d5db;">Tool call: <span style="color: #fbbf24;">get_weather</span>({ city: "北京" })</div>
+          <div style="color: #93c5fd;">Agent: 北京今天晴，气温 22°C。</div>
+          <div style="color: #78716c; margin-top: 4px;">$ <span style="color: #f97316; animation: blink 1s infinite;">▋</span></div>
+        </div>
+      </div>
+
+      <div style="color: #f5f5f4; font-size: 22px; font-weight: bold; margin-bottom: 8px; position: relative;">AI Agent 实战手册</div>
+      <div style="color: #a8a29e; font-size: 13px; margin-bottom: 20px; position: relative;">23 个项目 · 每章可运行 · Anthropic SDK + TypeScript</div>
+
+      <div style="display: flex; gap: 10px; justify-content: center; position: relative;">
+        <span style="background: #ea580c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-family: monospace; cursor: pointer;">▶ bun run p01</span>
+        <span style="background: transparent; border: 1px solid #44403c; color: #a8a29e; padding: 8px 20px; border-radius: 6px; font-size: 13px; cursor: pointer;">课程大纲</span>
+        <span style="background: transparent; border: 1px solid #44403c; color: #a8a29e; padding: 8px 20px; border-radius: 6px; font-size: 13px; cursor: pointer;">← 返回理论篇</span>
+      </div>
+    </div>
+
+    <!-- Phase 卡片网格 -->
+    <div style="padding: 0 32px 28px;">
+      <div style="color: #57534e; font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">// 课程阶段</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+
+        <div style="background: #1c1917; border: 1px solid #292524; border-radius: 6px; padding: 12px;">
+          <div style="color: #f97316; font-size: 11px; font-family: monospace; margin-bottom: 6px;">Phase 1</div>
+          <div style="color: #f5f5f4; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Agent 基础</div>
+          <div style="color: #78716c; font-size: 10px;">4 章 · 工具调用 / 流式输出</div>
+          <div style="margin-top: 8px; display: flex; gap: 3px;">
+            <div style="width: 16px; height: 3px; background: #ea580c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #ea580c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #ea580c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #ea580c; border-radius: 2px;"></div>
+          </div>
+        </div>
+
+        <div style="background: #1c1917; border: 1px solid #292524; border-radius: 6px; padding: 12px;">
+          <div style="color: #f97316; font-size: 11px; font-family: monospace; margin-bottom: 6px;">Phase 2</div>
+          <div style="color: #f5f5f4; font-size: 12px; font-weight: 600; margin-bottom: 4px;">记忆与知识</div>
+          <div style="color: #78716c; font-size: 10px;">5 章 · RAG / GraphRAG</div>
+          <div style="margin-top: 8px; display: flex; gap: 3px;">
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+          </div>
+        </div>
+
+        <div style="background: #1c1917; border: 1px solid #292524; border-radius: 6px; padding: 12px;">
+          <div style="color: #f97316; font-size: 11px; font-family: monospace; margin-bottom: 6px;">Phase 3</div>
+          <div style="color: #f5f5f4; font-size: 12px; font-weight: 600; margin-bottom: 4px;">推理与规划</div>
+          <div style="color: #78716c; font-size: 10px;">3 章 · ReAct / Planning</div>
+          <div style="margin-top: 8px; display: flex; gap: 3px;">
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+          </div>
+        </div>
+
+        <div style="background: #1c1917; border: 1px solid #292524; border-radius: 6px; padding: 12px;">
+          <div style="color: #f97316; font-size: 11px; font-family: monospace; margin-bottom: 6px;">Phase 4-7</div>
+          <div style="color: #f5f5f4; font-size: 12px; font-weight: 600; margin-bottom: 4px;">感知 · 协作 · 生产</div>
+          <div style="color: #78716c; font-size: 10px;">11 章 · 多模态 / 多 Agent</div>
+          <div style="margin-top: 8px; display: flex; gap: 3px;">
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+            <div style="width: 16px; height: 3px; background: #44403c; border-radius: 2px;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 技术标签 -->
+    <div style="padding: 0 32px 24px; border-top: 1px solid #1c1917;">
+      <div style="color: #57534e; font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 16px;">// 技术覆盖</div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Anthropic SDK</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Tool Calling</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">RAG</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">GraphRAG</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">ReAct</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Planning</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Multimodal</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">MCP</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Multi-Agent</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Observability</span>
+        <span style="background: #1c1917; color: #f97316; border: 1px solid #292524; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: monospace;">Security</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--subtitle-color);">这是首页的大致视觉效果，在终端告诉我有没有需要调整的地方</p>

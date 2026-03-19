@@ -1,6 +1,33 @@
 # 从零构建 AI Coding Agent — OpenCode 源码剖析与实战
 
-基于 VitePress 构建的电子书站点，系统剖析 [OpenCode](https://github.com/anomalyco/opencode/tree/dev) 源码，涵盖 AI Agent 基础架构、工具系统、多模型支持、TUI 界面等 24 个章节，以及 oh-my-openagent 插件系统实战。
+基于 VitePress 构建的电子书站点，包含两条主线：
+
+- 理论篇：系统剖析 [OpenCode](https://github.com/anomalyco/opencode/tree/dev) 源码，涵盖 AI Agent 基础架构、工具系统、多模型支持、TUI 界面等 24 个章节，以及 oh-my-openagent 插件系统实战
+- 实践篇：23 个项目，按章节拆解 TypeScript Agent 实现，从工具调用到生产部署逐步展开
+
+## 先说明实践篇的当前定位
+
+实践篇现在的定位是 **可跟打 + 可直接运行的仓库内示例**。
+
+这意味着：
+
+- 文档中的 `bun run pxx-*.ts` 是已经落在仓库根目录的推荐示例入口命名
+- 当前仓库已经提供 `P1-P23` 对应示例文件，可直接按章节命令运行
+- 开始实践前，建议先阅读 [实践环境准备](/practice/setup)
+
+如果你从仓库首页进入，建议这样走：
+
+1. 先看理论篇：理解 OpenCode 的源码结构和工程边界
+2. 再看实践篇：按 P1 -> P23 的顺序，把核心 Agent 模式逐步跑通并对照实现
+
+## 站点入口
+
+- 首页：`/`
+- 实践篇：`/practice/`
+- 实践环境准备：`/practice/setup`
+- 阅读地图：`/reading-map`
+- 版本说明：`/version-notes`
+- 术语表：`/glossary`
 
 ## 目录结构
 
@@ -36,6 +63,7 @@
 │           └── TaskDelegationDemo.vue      # 任务委派演示（第五部分）
 ├── docs/
 │   ├── index.md                # 首页（layout: home）
+│   ├── practice/               # 实践篇（23 个项目 + setup 页面）
 │   ├── reading-map.md          # 阅读地图
 │   ├── version-notes.md        # 版本说明
 │   ├── glossary.md             # 术语表
@@ -121,11 +149,26 @@
 ## 本地开发
 
 ```bash
-bun install
-bun dev      # 启动开发服务器（默认端口 5173）
-bun build    # 构建静态产物到 .vitepress/dist/
-bun preview  # 预览构建结果
+pnpm install
+pnpm dev      # 启动开发服务器（默认端口 5173）
+pnpm build    # 构建静态产物到 .vitepress/dist/
+pnpm preview  # 预览构建结果
 ```
+
+如果你只想阅读站点，到这里就够了。
+
+如果你要跟着实践篇动手写代码，再继续看 [实践环境准备](/practice/setup)。
+
+## 实践篇运行边界
+
+实践篇涉及 `@anthropic-ai/sdk`、`ANTHROPIC_API_KEY` 等运行条件，但这些不是阅读文档站点的必需条件。
+
+请区分两种模式：
+
+- 阅读模式：只启动 VitePress 站点，不要求安装实践示例依赖
+- 跟打模式：直接运行仓库内示例文件，并按章节继续修改、实验、扩展，外加安装依赖与配置环境变量
+
+推荐先从 [实践环境准备](/practice/setup) 开始，再进入 [P1：最小 Agent](/practice/p01-minimal-agent/)。
 
 ## 生产部署
 

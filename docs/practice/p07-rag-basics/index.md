@@ -11,6 +11,19 @@ description: 向量化、分块策略、语义检索，构建让 Agent 能读文
   :tags="['RAG', 'Vector Search', 'TypeScript', 'Anthropic SDK']"
 />
 
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 建议先完成前置章节：`P1`、`P5`
+- 本章建议入口命令：`bun run p07-rag-basics.ts`
+- 示例文件位置：仓库根目录 `p07-rag-basics.ts`
+
 ## 背景与目标
 
 P6 的 `MemoryBank` 用关键词检索记忆，有一个根本局限：
@@ -146,7 +159,16 @@ type 更灵活，支持联合类型、交叉类型和条件类型...
 
 ## 动手实现
 
-<RunCommand command="bun run p07-rag-basics.ts" />
+<RunCommand command="bun run p07-rag-basics.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖和环境变量配置
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+
 
 ### 第一步：定义 Chunk 接口
 

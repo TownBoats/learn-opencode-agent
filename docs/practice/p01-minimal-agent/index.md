@@ -11,6 +11,19 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
   :tags="['Anthropic SDK', 'Tool Calling', 'TypeScript']"
 />
 
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 前置章节：无，可直接开始
+- 本章建议入口命令：`bun run p01-minimal-agent.ts`
+- 示例文件位置：仓库根目录 `p01-minimal-agent.ts`
+
 ## 背景与目标
 
 大多数人第一次用 LLM API，都是这样写的：
@@ -43,7 +56,16 @@ const response = await client.messages.create({
 
 ## 动手实现
 
-<RunCommand command="bun run p01-minimal-agent.ts" />
+<RunCommand command="bun run p01-minimal-agent.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖、环境变量和本章示例文件
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+
 
 ### 第一步：声明工具
 

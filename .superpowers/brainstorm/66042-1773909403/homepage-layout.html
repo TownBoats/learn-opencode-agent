@@ -1,0 +1,91 @@
+<h2>实践篇首页布局方案</h2>
+<p class="subtitle">选择一个你觉得最符合「动手实践」气质的首页结构</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fb923c 100%); border-radius: 8px; padding: 16px; font-family: monospace;">
+        <div style="color: white; font-size: 13px; margin-bottom: 8px; opacity: 0.8">▶ AI Agent 实战手册</div>
+        <div style="color: white; font-size: 18px; font-weight: bold; margin-bottom: 4px;">从 API 到生产级 Agent</div>
+        <div style="color: #fed7aa; font-size: 11px; margin-bottom: 12px;">12 个项目 · 每章可运行 · TypeScript + Anthropic SDK</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <span style="background: rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px;">▶ 开始第一课</span>
+          <span style="background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px;">课程大纲</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;">
+          <div style="background: rgba(255,255,255,0.15); border-radius: 4px; padding: 6px; text-align: center; font-size: 10px; color: white;">P1<br/>基础工具调用</div>
+          <div style="background: rgba(255,255,255,0.15); border-radius: 4px; padding: 6px; text-align: center; font-size: 10px; color: white;">P2<br/>多轮对话</div>
+          <div style="background: rgba(255,255,255,0.15); border-radius: 4px; padding: 6px; text-align: center; font-size: 10px; color: white;">P3<br/>ReAct Loop</div>
+          <div style="background: rgba(255,255,255,0.15); border-radius: 4px; padding: 6px; text-align: center; font-size: 10px; color: white;">···</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 项目驱动型</h3>
+      <p>Hero 区展示课程卡片网格，每格一个项目缩略图。强调"12 个可运行项目"，入口直接跳到第一课。橙色渐变背景，代码感强。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #1c1917; border-radius: 8px; padding: 16px; font-family: monospace;">
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></div>
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+        </div>
+        <div style="color: #f97316; font-size: 12px; margin-bottom: 4px;">$ npx create-agent</div>
+        <div style="color: #86efac; font-size: 12px; margin-bottom: 2px;">✓ 创建项目结构...</div>
+        <div style="color: #86efac; font-size: 12px; margin-bottom: 8px;">✓ 安装 @anthropic-ai/sdk</div>
+        <div style="color: #fbbf24; font-size: 12px;">▶ 开始你的第一个 Agent</div>
+        <div style="margin-top: 10px; border-top: 1px solid #44403c; padding-top: 10px;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <span style="background: #292524; color: #fb923c; border: 1px solid #44403c; padding: 3px 8px; border-radius: 3px; font-size: 10px;">工具调用</span>
+            <span style="background: #292524; color: #fb923c; border: 1px solid #44403c; padding: 3px 8px; border-radius: 3px; font-size: 10px;">多轮对话</span>
+            <span style="background: #292524; color: #fb923c; border: 1px solid #44403c; padding: 3px 8px; border-radius: 3px; font-size: 10px;">RAG</span>
+            <span style="background: #292524; color: #fb923c; border: 1px solid #44403c; padding: 3px 8px; border-radius: 3px; font-size: 10px;">MCP</span>
+            <span style="background: #292524; color: #fb923c; border: 1px solid #44403c; padding: 3px 8px; border-radius: 3px; font-size: 10px;">多 Agent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 终端 / Hacker 风</h3>
+      <p>深色背景模拟终端，Hero 区是一段"运行中"的 CLI 输出动画。标签云展示覆盖主题。与主书 Teal 风形成强烈反差，突出"实操"感。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #fff7ed; border-radius: 8px; padding: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <div style="width: 32px; height: 32px; background: #ea580c; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: bold;">P</div>
+          <div>
+            <div style="font-size: 13px; font-weight: bold; color: #1c1917;">AI Agent 实战手册</div>
+            <div style="font-size: 10px; color: #78716c;">Practice Edition</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #ea580c;">
+          <div style="font-size: 11px; font-weight: bold; color: #ea580c; margin-bottom: 2px;">第一阶段 · 基础</div>
+          <div style="font-size: 10px; color: #44403c;">工具调用 · 多轮对话 · 流式输出 (3 章)</div>
+          <div style="margin-top: 6px; background: #fff7ed; border-radius: 3px; height: 4px; overflow: hidden;">
+            <div style="background: #ea580c; width: 100%; height: 100%; border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; padding: 10px; border-left: 3px solid #d1d5db;">
+          <div style="font-size: 11px; font-weight: bold; color: #6b7280; margin-bottom: 2px;">第二阶段 · 进阶</div>
+          <div style="font-size: 10px; color: #44403c;">ReAct · RAG · 成本控制 (4 章)</div>
+          <div style="margin-top: 6px; background: #f3f4f6; border-radius: 3px; height: 4px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 课程进度型</h3>
+      <p>浅橙色背景，用学习进度条展示章节分组。类似在线课程平台（Udemy 风）。读者可以一眼看出学习路径和当前进度。</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--subtitle-color);">点击选择，或直接在终端告诉我你的想法</p>

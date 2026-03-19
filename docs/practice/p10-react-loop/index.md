@@ -11,6 +11,19 @@ description: 实现 Reason-Act 循环，让 Agent 在每次行动前显式输出
   :tags="['ReAct', 'Reasoning', 'Agent Loop', 'TypeScript', 'Anthropic SDK']"
 />
 
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 建议先完成前置章节：`P1`、`P4`
+- 本章建议入口命令：`bun run p10-react-loop.ts`
+- 示例文件位置：仓库根目录 `p10-react-loop.ts`
+
 ## 背景与目标
 
 P1 实现的最小 Agent 循环能用，但有一个调试噩梦：**你不知道模型为什么调用某个工具**。
@@ -110,7 +123,16 @@ Action Input: {"city": "北京"}
 
 ## 动手实现
 
-<RunCommand command="bun run p10-react-loop.ts" />
+<RunCommand command="bun run p10-react-loop.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖和环境变量配置
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+
 
 ### 第一步：System Prompt 定义格式
 

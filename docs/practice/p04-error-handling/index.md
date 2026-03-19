@@ -11,6 +11,19 @@ description: 指数退避、工具调用失败降级、让 Agent 在不稳定环
   :tags="['Error Handling', 'Retry', 'Anthropic SDK', 'TypeScript']"
 />
 
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 建议先完成前置章节：`P1`、`P2`
+- 本章建议入口命令：`bun run p04-error-handling.ts`
+- 示例文件位置：仓库根目录 `p04-error-handling.ts`
+
 ## 背景与目标
 
 把 P1 的最小 Agent 部署到生产环境，第一周就会遇到这些问题：
@@ -81,7 +94,16 @@ delay = baseDelay * 2^attempt + random(0, jitter)
 
 ## 动手实现
 
-<RunCommand command="bun run p04-error-handling.ts" />
+<RunCommand command="bun run p04-error-handling.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖、环境变量和本章示例文件
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+
 
 ### 第一步：定义类型与常量
 

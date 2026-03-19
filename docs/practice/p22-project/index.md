@@ -11,7 +11,18 @@ description: 综合多 Agent 编排、安全检测、结构化输出等技术，
   :tags="['Project', 'Code Review', 'Multi-Agent', 'TypeScript', 'Anthropic SDK']"
 />
 
-> 开始前先看：[实践环境准备](/practice/setup/)。如果本章里的 `RunCommand` 对应文件在仓库中还不存在，请先按正文步骤创建示例文件，再执行命令。
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 建议先完成前置章节：`P1`、`P10`、`P15`、`P19`
+- 本章建议入口命令：`bun run p22-project.ts`
+- 示例文件位置：仓库根目录 `p22-project.ts`
 
 ## 背景与目标
 
@@ -102,7 +113,27 @@ ReportGenerator（生成最终报告）
 
 ## 动手实现
 
-<RunCommand command="bun run p22-project.ts" />
+<RunCommand command="bun run p22-project.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖和环境变量配置
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+### 快速判断是否跑通
+
+如果主链路正常，你至少会看到下面 4 类关键信号：
+
+- 出现 `=== Code Review Agent 启动 ===`，并完成 4 个阶段日志输出
+- `阶段 1` 会解析出 2 个文件变更：`src/api/users.ts` 和 `src/utils/helpers.ts`
+- `阶段 2` 会同时出现 `SecurityReviewer` 和 `QualityReviewer` 的开始/完成日志
+- 最终输出里会出现 `Code Review Agent 审查报告` 标题，以及 `发现总数 / 严重 / 警告 / 信息` 统计
+
+如果你的输出和示例里的具体问题数量不完全一致，不一定是错误。只要阶段日志完整、报告结构正确、且能识别出至少一部分安全或质量问题，通常就说明链路已经跑通。
+
+
 
 ### 第一步：类型定义
 

@@ -80,4 +80,6 @@ export interface ProjectCardProps {
 
 export interface RunCommandProps {
   command: string
+  hint?: string
+  verified?: boolean
 }

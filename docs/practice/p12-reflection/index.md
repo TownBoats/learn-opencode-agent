@@ -11,6 +11,19 @@ description: 让 Agent 生成初稿后用评审者角色评估质量，根据反
   :tags="['Reflection', 'Self-Evaluation', 'TypeScript', 'Anthropic SDK']"
 />
 
+> 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
+
+## 前置准备
+
+开始本章前，请先确认：
+
+- 已阅读 [实践环境准备](/practice/setup)
+- 基础依赖已就绪：`@anthropic-ai/sdk`
+- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 建议先完成前置章节：`P10`
+- 本章建议入口命令：`bun run p12-reflection.ts`
+- 示例文件位置：仓库根目录 `p12-reflection.ts`
+
 ## 背景与目标
 
 P10 的 ReAct Agent 解决了"如何让模型在行动前显式推理"的问题。但还有另一个常见困境：**模型第一次输出的结果不够好，你知道有问题，但不知道哪里有问题，也不知道怎么改**。
@@ -95,7 +108,16 @@ Reflection 模式有两种实现方式：
 
 ## 动手实现
 
-<RunCommand command="bun run p12-reflection.ts" />
+<RunCommand command="bun run p12-reflection.ts" :verified="true" />
+
+### 运行与验证
+
+- 先按前置准备完成依赖和环境变量配置
+- 执行上面的推荐入口命令
+- 将输出与下文的“运行结果”或章节描述对照，确认主链路已经跑通
+- 如果遇到命令、依赖、环境变量或样例输入问题，先回到 [实践环境准备](/practice/setup) 排查
+
+
 
 ### 第一步：类型定义和初始化
 

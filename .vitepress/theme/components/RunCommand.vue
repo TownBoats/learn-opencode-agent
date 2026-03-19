@@ -2,9 +2,18 @@
 import type { RunCommandProps } from './types'
 import { ref } from 'vue'
 
-const props = defineProps<RunCommandProps>()
+const props = withDefaults(defineProps<RunCommandProps>(), {
+  hint: '',
+  verified: false,
+})
 
 const copied = ref(false)
+
+function getHintText() {
+  if (props.hint) return props.hint
+  if (props.verified) return '当前仓库已提供对应文件，完成前置准备后可直接执行。'
+  return '推荐入口命令。若仓库内尚无对应示例文件，请先按正文创建文件并完成前置准备。'
+}
 
 function copy() {
   if (typeof navigator === 'undefined') return
@@ -19,25 +28,31 @@ function copy() {
 
 <template>
   <div class="run-command">
-    <span class="prompt">$</span>
-    <code class="command-text">{{ command }}</code>
-    <button class="copy-btn" @click="copy">
-      {{ copied ? '已复制' : '复制' }}
-    </button>
+    <div class="command-row">
+      <span class="prompt">$</span>
+      <code class="command-text">{{ command }}</code>
+      <button class="copy-btn" @click="copy">
+        {{ copied ? '已复制' : '复制' }}
+      </button>
+    </div>
+    <p class="command-hint">{{ getHintText() }}</p>
   </div>
 </template>
 
 <style scoped>
 .run-command {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   background: #1c1917;
   border: 1px solid #292524;
   border-radius: 8px;
   padding: 12px 16px;
   margin: 20px 0;
   font-family: monospace;
+}
+
+.command-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .prompt {
@@ -70,5 +85,13 @@ function copy() {
 .copy-btn:hover {
   color: #f97316;
   border-color: #f97316;
+}
+
+.command-hint {
+  margin: 10px 0 0;
+  color: #a8a29e;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: inherit;
 }
 </style>
