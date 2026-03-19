@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 const chapters = [
@@ -17,6 +17,15 @@ const chapters = [
   { dir: '13-deployment-infrastructure', title: '第十三篇：部署与基础设施' },
   { dir: '14-testing-quality', title: '第十四篇：测试与质量保证' },
   { dir: '15-advanced-topics', title: '第十五篇：高级主题与最佳实践' },
+  // 第五部分：oh-my-openagent 插件系统
+  { dir: 'oh-prelude', title: '第17章：为什么需要多个 Agent？' },
+  { dir: '16-plugin-overview', title: '第18章：oh-my-openagent 插件系统概述' },
+  { dir: 'oh-config', title: '第19章：配置系统实战' },
+  { dir: '17-multi-model-orchestration', title: '第20章：多模型编排系统' },
+  { dir: '18-hooks-architecture', title: '第21章：Hooks 三层架构' },
+  { dir: '19-tool-extension', title: '第22章：工具扩展系统' },
+  { dir: 'oh-flow', title: '第23章：一条消息的完整旅程' },
+  { dir: '20-best-practices', title: '第24章：实战案例与最佳实践' },
 ];
 
 const docsDir = 'docs';

@@ -1,29 +1,46 @@
 # 从零构建 AI Coding Agent — OpenCode 源码剖析与实战
 
-基于 VitePress 构建的电子书站点，系统剖析 [OpenCode](https://github.com/anomalyco/opencode/tree/dev) 源码，涵盖 AI Agent 基础架构、工具系统、多模型支持、TUI 界面等 16 个章节。
+基于 VitePress 构建的电子书站点，系统剖析 [OpenCode](https://github.com/anomalyco/opencode/tree/dev) 源码，涵盖 AI Agent 基础架构、工具系统、多模型支持、TUI 界面等 24 个章节，以及 oh-my-openagent 插件系统实战。
 
 ## 目录结构
 
 ```text
 .
 ├── .vitepress/
-│   ├── config.mts              # 站点配置（导航、侧边栏、Mermaid 插件）
+│   ├── config.mts              # 站点配置（导航、侧边栏、Mermaid 插件、OG meta）
 │   └── theme/
-│       ├── index.ts
-│       ├── custom.css
+│       ├── index.ts            # 主题入口，注册全部 Vue 全局组件
+│       ├── custom.css          # Cyber Teal 设计系统
 │       └── components/
-│           ├── LearningPath.vue          # 学习路径导引组件
-│           ├── TechStackGrid.vue         # 技术栈网格展示
-│           ├── ReActLoop.vue             # ReAct 循环动画演示
-│           ├── RuntimeLifecycleDiagram.vue  # 运行时生命周期图
-│           ├── StreamingDemo.vue         # 流式输出演示
-│           └── SourceSnapshotCard.vue    # 源码快照卡片
+│           ├── types.ts                    # 所有组件 Props 类型定义
+│           ├── LearningPath.vue            # 首页学习路径卡片组
+│           ├── TechStackGrid.vue           # 首页技术栈网格展示
+│           ├── RuntimeLifecycleDiagram.vue # 运行时生命周期图
+│           ├── SourceSnapshotCard.vue      # 各章源码快照卡
+│           ├── StarCTA.vue                 # 各章末尾 Star 引导按钮
+│           ├── ReActLoop.vue               # ReAct 循环动画演示
+│           ├── StreamingDemo.vue           # 流式输出演示
+│           ├── MessageAccumulator.vue      # 消息累积演示
+│           ├── PermissionFlow.vue          # 权限流程动画
+│           ├── McpHandshake.vue            # MCP 握手演示
+│           ├── SseBroadcast.vue            # SSE 广播演示
+│           ├── ContextCompaction.vue       # 上下文压缩演示
+│           ├── ProviderFallback.vue        # Provider 故障转移演示
+│           ├── WorkflowVsAgent.vue         # Workflow vs Agent 对比
+│           ├── LspHover.vue               # LSP Hover 演示
+│           ├── ConnectionGate.vue          # 连接门控演示
+│           ├── AgentDispatchDemo.vue       # Agent 调度演示（第五部分）
+│           ├── BackgroundTaskDemo.vue      # 后台任务演示（第五部分）
+│           ├── RuntimeFallbackDemo.vue     # 运行时故障转移演示（第五部分）
+│           ├── HashlineEditDemo.vue        # Hashline 编辑演示（第五部分）
+│           └── TaskDelegationDemo.vue      # 任务委派演示（第五部分）
 ├── docs/
 │   ├── index.md                # 首页（layout: home）
 │   ├── reading-map.md          # 阅读地图
 │   ├── version-notes.md        # 版本说明
 │   ├── glossary.md             # 术语表
 │   ├── release-checklist.md    # 发布清单
+│   ├── oh-my-openagent-plan.md # oh-my-openagent 规划文档
 │   ├── 00-what-is-ai-agent/
 │   ├── 01-agent-basics/
 │   ├── 02-agent-core/
@@ -39,8 +56,16 @@
 │   ├── 12-plugins-extensions/
 │   ├── 13-deployment-infrastructure/
 │   ├── 14-testing-quality/
-│   └── 15-advanced-topics/
-├── add-frontmatter.ts          # 辅助脚本：补充 frontmatter
+│   ├── 15-advanced-topics/
+│   ├── oh-prelude/
+│   ├── 16-plugin-overview/
+│   ├── oh-config/
+│   ├── 17-multi-model-orchestration/
+│   ├── 18-hooks-architecture/
+│   ├── 19-tool-extension/
+│   ├── oh-flow/
+│   └── 20-best-practices/
+├── add-frontmatter.ts          # 辅助脚本：批量补充 frontmatter
 ├── remove-duplicate-titles.ts  # 辅助脚本：移除重复 H1
 ├── Caddyfile                   # 生产静态服务配置
 ├── railpack.toml               # Railpack 部署配置
@@ -49,15 +74,28 @@
 
 ## 章节结构
 
+### 第一部分：AI Agent 基础
 | 章节 | 目录 |
 |------|------|
 | 第1章：什么是 AI Agent | `00-what-is-ai-agent/` |
 | 第2章：AI Agent 的核心组件 | `01-agent-basics/` |
+
+### 第二部分：OpenCode 项目架构
+| 章节 | 目录 |
+|------|------|
 | 第3章：OpenCode 项目介绍 | `02-agent-core/` |
+
+### 第三部分：Agent 核心机制
+| 章节 | 目录 |
+|------|------|
 | 第4章：工具系统 | `03-tool-system/` |
 | 第5章：会话管理 | `04-session-management/` |
 | 第6章：多模型支持 | `05-provider-system/` |
 | 第7章：MCP 协议集成 | `06-mcp-integration/` |
+
+### 第四部分：OpenCode 深入主题
+| 章节 | 目录 |
+|------|------|
 | 第8章：TUI 终端界面 | `07-tui-interface/` |
 | 第9章：HTTP API 服务器 | `08-http-api-server/` |
 | 第10章：数据持久化 | `09-data-persistence/` |
@@ -68,11 +106,23 @@
 | 第15章：测试与质量保证 | `14-testing-quality/` |
 | 第16章：高级主题与最佳实践 | `15-advanced-topics/` |
 
+### 第五部分：oh-my-openagent 插件系统
+| 章节 | 目录 |
+|------|------|
+| 第17章：为什么需要多个 Agent？ | `oh-prelude/` |
+| 第18章：插件系统概述 | `16-plugin-overview/` |
+| 第19章：配置系统实战 | `oh-config/` |
+| 第20章：多模型编排系统 | `17-multi-model-orchestration/` |
+| 第21章：Hooks 三层架构 | `18-hooks-architecture/` |
+| 第22章：工具扩展系统 | `19-tool-extension/` |
+| 第23章：一条消息的完整旅程 | `oh-flow/` |
+| 第24章：实战案例与最佳实践 | `20-best-practices/` |
+
 ## 本地开发
 
 ```bash
 bun install
-bun dev      # 启动开发服务器
+bun dev      # 启动开发服务器（默认端口 5173）
 bun build    # 构建静态产物到 .vitepress/dist/
 bun preview  # 预览构建结果
 ```
@@ -83,7 +133,7 @@ bun preview  # 预览构建结果
 
 ```bash
 # 构建
-pnpm run build
+bun run build
 
 # 启动（需要 Caddy）
 caddy run --config /Caddyfile --adapter caddyfile
@@ -105,5 +155,6 @@ caddy run --config /Caddyfile --adapter caddyfile
 - 站点导航和侧边栏以 `.vitepress/config.mts` 为准。
 - 每个章节页必须有 frontmatter（`title` + `description`），正文不重复一级标题。
 - 图表使用 Mermaid（由 `vitepress-plugin-mermaid` 提供），交互动画使用 `.vitepress/theme/components/` 中的 Vue 组件。
+- 所有组件 Props 类型集中定义在 `components/types.ts`，不放在 `.vue` 文件内。
 - 文中引用的源码路径应与 [OpenCode 仓库](https://github.com/anomalyco/opencode/tree/dev) 真实结构一致。
 - 修改正文结构时同步检查辅助页面（阅读地图、术语表）是否仍然成立。
