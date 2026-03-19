@@ -23,6 +23,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
   <a href="/practice/setup" class="btn-secondary">开始前先看</a>
   <a href="/practice/p01-minimal-agent/" class="btn-primary">从 P1 开始</a>
   <a href="#phases" class="btn-secondary">课程大纲</a>
+  <a href="#chapter-matrix" class="btn-secondary">章节总表</a>
   <a href="#run-index" class="btn-secondary">运行索引</a>
   <a href="/" class="btn-secondary">← 返回理论篇</a>
 </div>
@@ -70,6 +71,42 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 - 除 `P14` 外，其余章节当前都只依赖 `@anthropic-ai/sdk` 和 Node 内置模块。
 - `P23` 的健康检查示例使用的是 `node:http`，不需要额外安装 Web 框架。
+
+### 章节状态总表 {#chapter-matrix}
+
+如果你还在决定“先学哪章 / 这章会不会跳太快 / 需不需要额外装包”，可以先看这张表：
+
+| 章节 | 主题 | 难度 | 前置章节 | 额外依赖 | 入口脚本 |
+|------|------|------|----------|----------|----------|
+| P1 | 最小 Agent | beginner | 无 | 无 | `p01-minimal-agent.ts` |
+| P2 | 多轮对话 | beginner | `P1` | 无 | `p02-multi-turn.ts` |
+| P3 | 流式输出 | beginner | `P1` | 无 | `p03-streaming.ts` |
+| P4 | 错误处理与重试 | intermediate | `P1` `P2` | 无 | `p04-error-handling.ts` |
+| P5 | 记忆系统架构 | intermediate | `P1` `P2` | 无 | `p05-memory-arch.ts` |
+| P6 | 记忆增强检索 | intermediate | `P1` `P5` | 无 | `p06-memory-retrieval.ts` |
+| P7 | RAG 基础 | intermediate | `P1` `P5` | 无 | `p07-rag-basics.ts` |
+| P8 | GraphRAG | advanced | `P7` | 无 | `p08-graphrag.ts` |
+| P9 | 混合检索 | advanced | `P7` `P8` | 无 | `p09-hybrid-retrieval.ts` |
+| P10 | ReAct Loop | intermediate | `P1` `P4` | 无 | `p10-react-loop.ts` |
+| P11 | Planning | advanced | `P10` | 无 | `p11-planning.ts` |
+| P12 | Reflection | intermediate | `P10` | 无 | `p12-reflection.ts` |
+| P13 | 多模态 | intermediate | `P1` | 无 | `p13-multimodal.ts` |
+| P14 | MCP 协议接入 | advanced | `P1` `P4` | `@modelcontextprotocol/sdk` | `p14-mcp.ts` |
+| P15 | 多 Agent 编排 | advanced | `P1` `P11` | 无 | `p15-multi-agent.ts` |
+| P16 | 子 Agent 与任务分解 | advanced | `P1` `P15` | 无 | `p16-subagent.ts` |
+| P17 | Agent 通信与状态共享 | advanced | `P15` `P16` | 无 | `p17-agent-comm.ts` |
+| P18 | 多模型路由与成本控制 | intermediate | `P1` | 无 | `p18-model-routing.ts` |
+| P19 | Agent 安全与防注入 | advanced | `P1` `P4` | 无 | `p19-security.ts` |
+| P20 | 可观测性与调试 | intermediate | `P1` | 无 | `p20-observability.ts` |
+| P21 | 评估与基准测试 | intermediate | `P1` `P12` | 无 | `p21-evaluation.ts` |
+| P22 | 完整项目实战 | advanced | `P1` `P10` `P15` `P19` | 无 | `p22-project.ts` |
+| P23 | 生产部署清单 | intermediate | `P18` `P19` `P20` | 无 | `p23-production.ts` |
+
+快速建议：
+
+- 如果你是第一次动手，优先按 `P1 -> P4 -> P10 -> P18` 走一遍，再回头扩展记忆、MCP、多 Agent。
+- 如果你只想看综合项目，至少先跑通 `P1`、`P10`、`P15`、`P19`，再进 `P22`。
+- 如果你当前只是想体验生产化包装，`P18`、`P19`、`P20` 跑完后直接进 `P23` 会更顺。
 
 ### 阶段 1：Agent 基础
 

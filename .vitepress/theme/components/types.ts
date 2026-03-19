@@ -83,3 +83,14 @@ export interface RunCommandProps {
   hint?: string
   verified?: boolean
 }
+
+export interface TrackHighlight {
+  icon: string
+  text: string
+}
+
+export interface PracticePreviewProps {
+  theoryChapters?: number
+  practiceProjects?: number
+  practicePhases?: number
+}

@@ -7,17 +7,17 @@ hero:
   tagline: 面向 Agent 开发初学者的 OpenCode 源码带读电子书
   actions:
     - theme: brand
-      text: 开始阅读
+      text: 开始阅读理论篇
       link: /00-what-is-ai-agent/index
     - theme: brand
-      text: Star 支持本书
-      link: https://github.com/qqzhangyanhua/learn-opencode-agent
-    - theme: alt
-      text: 动手实践篇 →
+      text: 动手实践 23 个项目
       link: /practice/
     - theme: alt
       text: 阅读地图
       link: /reading-map
+    - theme: alt
+      text: Star 支持本书
+      link: https://github.com/qqzhangyanhua/learn-opencode-agent
     - theme: alt
       text: 查看 OpenCode 源码
       link: https://github.com/anomalyco/opencode/tree/dev
@@ -27,7 +27,21 @@ hero:
 import LearningPath from '../.vitepress/theme/components/LearningPath.vue'
 import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifecycleDiagram.vue'
 import TechStackGrid from '../.vitepress/theme/components/TechStackGrid.vue'
+import PracticePreview from '../.vitepress/theme/components/PracticePreview.vue'
 </script>
+
+## 学习方式
+
+本书提供**双轨学习体系**：
+
+- **理论篇**（第 1-16 章）：深入剖析 OpenCode 源码架构，理解 Agent 系统设计原理
+- **实践篇**（P1-P23）：23 个可运行项目，从最小 Agent 到生产部署全覆盖
+
+建议**理论与实践穿插学习**：看完理论篇第 1-4 章后，先跑通实践篇 P1-P4，建立感性认知后再深入后续章节。
+
+## 双轨学习体系
+
+<PracticePreview :theoryChapters="16" :practiceProjects="23" :practicePhases="7" />
 
 ## 核心学习路径
 
