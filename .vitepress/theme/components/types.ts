@@ -53,3 +53,27 @@ export interface LearningPhase {
   outcome: string
   chapters: LearningPathChapter[]
 }
+
+export interface PracticePhase {
+  id: number
+  title: string
+  subtitle: string
+  chapterCount: number
+  link: string
+}
+
+export interface PracticeTagCloudProps {
+  tags: string[]
+}
+
+export interface ProjectCardProps {
+  title: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  duration: string
+  prerequisites: string[]
+  tags: string[]
+}
+
+export interface RunCommandProps {
+  command: string
+}
