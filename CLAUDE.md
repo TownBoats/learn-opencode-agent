@@ -2,6 +2,7 @@
 
 ## 变更记录 (Changelog)
 
+- **2026-03-20 10:00:00** - 补充实践篇完整结构：23 个实践章节（P1-P23）、7 个阶段、3 个实践篇专属组件
 - **2026-03-19 16:12:00** - 全量重扫：补全第五部分章节、oh-* 特殊页面、21 个 Vue 组件完整清单、types.ts 类型接口、custom.css 设计系统
 - **初始版** - 初始手写文档，覆盖 00-15 章节与 4 个 Vue 组件
 
@@ -95,7 +96,33 @@ docs/book/
 │   ├── 18-hooks-architecture/index.md  # 第21章：Hooks 三层架构
 │   ├── 19-tool-extension/index.md      # 第22章：工具扩展系统
 │   ├── oh-flow/index.md                # 第23章：一条消息的完整旅程
-│   └── 20-best-practices/index.md      # 第24章：实战案例与最佳实践
+│   ├── 20-best-practices/index.md      # 第24章：实战案例与最佳实践
+│   └── practice/                       # 实践篇（独立目录）
+│       ├── index.md                    # 实践篇首页（layout: home）
+│       ├── setup.md                    # 实践环境准备
+│       ├── p01-minimal-agent/          # P1：最小 Agent
+│       ├── p02-multi-turn/             # P2：多轮对话
+│       ├── p03-streaming/              # P3：流式输出
+│       ├── p04-error-handling/         # P4：错误处理
+│       ├── p05-memory-arch/            # P5：记忆系统架构
+│       ├── p06-memory-retrieval/       # P6：记忆增强检索
+│       ├── p07-rag-basics/             # P7：RAG 基础
+│       ├── p08-graphrag/               # P8：GraphRAG
+│       ├── p09-hybrid-retrieval/       # P9：混合检索
+│       ├── p10-react-loop/             # P10：ReAct Loop
+│       ├── p11-planning/               # P11：Planning
+│       ├── p12-reflection/             # P12：Reflection
+│       ├── p13-multimodal/             # P13：多模态
+│       ├── p14-mcp/                    # P14：MCP 协议
+│       ├── p15-multi-agent/            # P15：多 Agent 编排
+│       ├── p16-subagent/               # P16：子 Agent
+│       ├── p17-agent-comm/             # P17：Agent 通信
+│       ├── p18-model-routing/          # P18：模型路由
+│       ├── p19-security/               # P19：安全防护
+│       ├── p20-observability/          # P20：可观测性
+│       ├── p21-evaluation/             # P21：评估测试
+│       ├── p22-project/                # P22：完整项目
+│       └── p23-production/             # P23：生产部署
 ├── add-frontmatter.ts              # 工具脚本：为章节补写 frontmatter
 ├── remove-duplicate-titles.ts      # 工具脚本：移除重复 H1
 └── package.json
@@ -149,10 +176,77 @@ docs/book/
 | 第23章：一条消息的完整旅程 | `docs/oh-flow/` | 端到端消息链路 |
 | 第24章：实战案例与最佳实践 | `docs/20-best-practices/` | 生产级实践 |
 
+### 第六部分：实践篇（独立目录）
+
+实践篇位于 `docs/practice/` 目录，包含 23 个可运行的 TypeScript 项目，分为 7 个阶段：
+
+| 阶段 | 章节范围 | 主题 | 章节数 |
+|------|----------|------|--------|
+| Phase 1 | P1-P4 | Agent 基础 | 4 |
+| Phase 2 | P5-P9 | 记忆与知识系统 | 5 |
+| Phase 3 | P10-P12 | 推理与规划 | 3 |
+| Phase 4 | P13-P14 | 感知扩展 | 2 |
+| Phase 5 | P15-P17 | 多 Agent 协作 | 3 |
+| Phase 6 | P18-P21 | 生产化 | 4 |
+| Phase 7 | P22-P23 | 综合实战 | 2 |
+
+#### Phase 1 — Agent 基础
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P1：最小 Agent | `docs/practice/p01-minimal-agent/` | 工具调用核心机制 |
+| P2：多轮对话 | `docs/practice/p02-multi-turn/` | 上下文管理 |
+| P3：流式输出 | `docs/practice/p03-streaming/` | 实时反馈 |
+| P4：错误处理 | `docs/practice/p04-error-handling/` | 重试策略 |
+
+#### Phase 2 — 记忆与知识系统
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P5：记忆系统架构 | `docs/practice/p05-memory-arch/` | 记忆系统设计 |
+| P6：记忆增强检索 | `docs/practice/p06-memory-retrieval/` | 记忆检索优化 |
+| P7：RAG 基础 | `docs/practice/p07-rag-basics/` | 检索增强生成 |
+| P8：GraphRAG | `docs/practice/p08-graphrag/` | 图结构 RAG |
+| P9：混合检索 | `docs/practice/p09-hybrid-retrieval/` | 多策略检索 |
+
+#### Phase 3 — 推理与规划
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P10：ReAct Loop | `docs/practice/p10-react-loop/` | 推理行动循环 |
+| P11：Planning | `docs/practice/p11-planning/` | 任务规划机制 |
+| P12：Reflection | `docs/practice/p12-reflection/` | 反思模式 |
+
+#### Phase 4 — 感知扩展
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P13：多模态 | `docs/practice/p13-multimodal/` | 多模态智能体 |
+| P14：MCP 协议 | `docs/practice/p14-mcp/` | MCP 协议接入 |
+
+#### Phase 5 — 多 Agent 协作
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P15：多 Agent 编排 | `docs/practice/p15-multi-agent/` | 编排模式 |
+| P16：子 Agent | `docs/practice/p16-subagent/` | 任务分解 |
+| P17：Agent 通信 | `docs/practice/p17-agent-comm/` | 状态共享 |
+
+#### Phase 6 — 生产化
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P18：模型路由 | `docs/practice/p18-model-routing/` | 成本控制 |
+| P19：安全防护 | `docs/practice/p19-security/` | 防注入 |
+| P20：可观测性 | `docs/practice/p20-observability/` | 调试监控 |
+| P21：评估测试 | `docs/practice/p21-evaluation/` | 基准测试 |
+
+#### Phase 7 — 综合实战
+| 章节 | 路径 | 说明 |
+|------|------|------|
+| P22：完整项目 | `docs/practice/p22-project/` | Code Review Agent |
+| P23：生产部署 | `docs/practice/p23-production/` | 部署清单 |
+
 ### 辅助页面
 | 页面 | 路径 | 说明 |
 |------|------|------|
 | 首页 | `docs/index.md` | layout: home，含 LearningPath、RuntimeLifecycleDiagram、TechStackGrid |
+| 实践篇首页 | `docs/practice/index.md` | 实践篇主页，含 PracticeTerminalHero、PracticePhaseGrid、PracticeTagCloud |
+| 实践环境准备 | `docs/practice/setup.md` | 环境配置与依赖安装 |
 | 阅读地图 | `docs/reading-map.md` | 四阶段课程分级，四条阅读路线（A/B/C/D） |
 | 术语表 | `docs/glossary.md` | 高频概念统一口径 |
 | 版本说明 | `docs/version-notes.md` | 源码快照语义、写作边界 |
@@ -201,6 +295,14 @@ docs/book/
 | `HashlineEditDemo` | `components/HashlineEditDemo.vue` | 第22章（Hashline 编辑） |
 | `TaskDelegationDemo` | `components/TaskDelegationDemo.vue` | 第21章（任务委派） |
 
+### 实践篇专属组件
+
+| 组件名 | 文件 | 用途 |
+|--------|------|------|
+| `PracticeTerminalHero` | `components/PracticeTerminalHero.vue` | 实践篇首页终端风格 Hero |
+| `PracticePhaseGrid` | `components/PracticePhaseGrid.vue` | 实践篇 7 个阶段网格展示 |
+| `PracticeTagCloud` | `components/PracticeTagCloud.vue` | 实践篇技术标签云 |
+
 ### 类型定义
 
 所有组件 Props 类型集中定义在 `.vitepress/theme/components/types.ts`：
@@ -215,7 +317,10 @@ docs/book/
 ## VitePress 配置要点
 
 - **srcDir**：`docs` — 所有内容路径相对于 `docs/`
-- **侧边栏**：在 `config.mts` 中手动定义，不自动生成，共五个部分
+- **侧边栏**：在 `config.mts` 中手动定义，不自动生成，包含：
+  - 理论篇侧边栏（`/`）：五个部分（第一至第五部分）
+  - 实践篇侧边栏（`/practice/`）：七个阶段（Phase 1-7），共 23 个章节
+- **导航栏**：首页 / 实践篇 / 阅读地图 / 版本说明 / 术语表 / 书仓库 / 源码仓库
 - **Mermaid**：通过 `vitepress-plugin-mermaid` + `withMermaid()` 包装启用
 - **OG Meta**：`transformPageData` 钩子自动注入每页 og:title / og:description / twitter:card
 - **站点信息**：
@@ -223,7 +328,6 @@ docs/book/
   - 源码仓库：`https://github.com/anomalyco/opencode/tree/dev`
 - **搜索**：本地搜索（`provider: 'local'`），无外部依赖
 - **大纲**：h2-h4 级别，label 为"目录"
-- **导航**：首页 / 阅读地图 / 版本说明 / 术语表 / 书仓库 / 源码仓库
 
 ---
 
@@ -231,7 +335,9 @@ docs/book/
 
 - **Frontmatter 必须**：每个章节文件必须有 `title` 和 `description`
 - **不重复 H1**：VitePress 从 frontmatter 渲染标题，正文不加同名 H1
-- **章节命名**：`docs/NN-slug/index.md`（00-20），特殊页 `docs/oh-*/index.md`
+- **章节命名**：
+  - 理论篇：`docs/NN-slug/index.md`（00-20），特殊页 `docs/oh-*/index.md`
+  - 实践篇：`docs/practice/pNN-slug/index.md`（p01-p23）
 - **辅助页面**：直接放 `docs/` 根下（不带子目录）
 - **源码快照卡**：每章顶部应包含 `<SourceSnapshotCard>` 锚定版本
 - **章末 CTA**：各章末尾可嵌入 `<StarCTA>` 引导 Star
@@ -280,10 +386,18 @@ docs/book/
 
 ### 修改或新增章节
 
+**理论篇章节**：
 1. 在 `docs/NN-slug/index.md` 中写内容，确保有 `title` 和 `description` frontmatter
-2. 在 `.vitepress/config.mts` 对应 `sidebar` 区块中添加 `{ text: '...', link: '/NN-slug/' }`
+2. 在 `.vitepress/config.mts` 的 `sidebar['/']` 区块中添加 `{ text: '...', link: '/NN-slug/' }`
 3. 导航/外部链接引用使用相对路径如 `/01-agent-basics/`（相对于 `docs/`）
-4. 需要交互演示时，先创建 Vue 组件，再在 `theme/index.ts` 中注册，然后直接在 Markdown 中使用
+
+**实践篇章节**：
+1. 在 `docs/practice/pNN-slug/index.md` 中写内容，确保有 `title` 和 `description` frontmatter
+2. 在 `.vitepress/config.mts` 的 `sidebar['/practice/']` 区块中添加到对应 Phase
+3. 链接使用 `/practice/pNN-slug/` 格式
+
+**交互演示**：
+需要交互演示时，先创建 Vue 组件，再在 `theme/index.ts` 中注册，然后直接在 Markdown 中使用
 
 ### 新增 Vue 组件
 
@@ -301,6 +415,9 @@ docs/book/
 ### 常见任务
 
 - **查看全书导航结构**：阅读 `.vitepress/config.mts` 的 `sidebar` 配置
+- **查看理论篇结构**：查看 `sidebar['/']` 配置（五个部分，24 章）
+- **查看实践篇结构**：查看 `sidebar['/practice/']` 配置（七个阶段，23 章）
 - **查看组件注册情况**：阅读 `.vitepress/theme/index.ts`
 - **查看 Props 类型**：阅读 `.vitepress/theme/components/types.ts`
 - **更新源码快照版本**：修改 `docs/version-notes.md` 的 `SourceSnapshotCard` props 及各章节的快照卡
+- **实践篇环境配置**：查看 `docs/practice/setup.md`
