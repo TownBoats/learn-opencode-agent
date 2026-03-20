@@ -8,7 +8,7 @@ description: 综合多 Agent 编排、安全检测、结构化输出等技术，
   difficulty="advanced"
   duration="90 min"
   :prerequisites="['P1', 'P10', 'P15', 'P19']"
-  :tags="['Project', 'Code Review', 'Multi-Agent', 'TypeScript', 'Anthropic SDK']"
+  :tags="['Project', 'Code Review', 'Multi-Agent', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 综合多 Agent 编排、安全检测、结构化输出等技术，
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`、`P10`、`P15`、`P19`
 - 本章建议入口命令：`bun run p22-project.ts`
 - 示例文件位置：仓库根目录 `p22-project.ts`
@@ -141,9 +141,9 @@ ReportGenerator（生成最终报告）
 
 ```ts
 // p22-project.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const anthropic = new OpenAI()
 
 // ─── 类型定义 ───
 
@@ -267,7 +267,7 @@ SecurityReviewer 是一个专注于安全维度的 LLM 调用。它的 system pr
 ```ts
 // p22-project.ts（续）
 
-const findingsTool: Anthropic.Tool = {
+const findingsTool: OpenAI.ChatCompletionTool = {
   name: 'submit_findings',
   description: '提交审查发现列表。每个发现必须包含具体的文件、行号、严重等级和改进建议。',
   input_schema: {
@@ -314,8 +314,8 @@ async function runSecurityReview(
     }`)
     .join('\n\n')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 4096,
     system: [
       '你是一位资深安全审查专家。',
@@ -367,8 +367,8 @@ async function runQualityReview(
     }`)
     .join('\n\n')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 4096,
     system: [
       '你是一位资深代码质量审查专家。',
@@ -408,7 +408,7 @@ async function runQualityReview(
 // p22-project.ts（续）
 
 function extractFindings(
-  response: Anthropic.Message,
+  response: OpenAI.ChatCompletion,
   reviewerId: string
 ): ReviewFinding[] {
   for (const block of response.content) {
@@ -530,8 +530,8 @@ async function generateReport(
     .map(f => `${f.filePath} (${f.changeType})`)
     .join(', ')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 1024,
     system: [
       '你是一位代码审查报告撰写专家。',
@@ -554,7 +554,7 @@ async function generateReport(
   })
 
   const summary = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 
@@ -858,7 +858,7 @@ main().catch(console.error)
 
 你现在有了一个完整的 Code Review Agent。回顾一下它整合了哪些技术：
 
-- **P1 基础调用**：每个 Reviewer 都是一次 `anthropic.messages.create`
+- **P1 基础调用**：每个 Reviewer 都是一次 `client.chat.completions.create`
 - **P10 ReAct 循环**：`tool_choice` 强制工具调用，结构化输出
 - **P15 多 Agent 编排**：Orchestrator 分派任务，Worker 并行执行
 - **P19 安全防御**：运行时类型校验，不信任模型输出的结构

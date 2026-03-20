@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 const RETRY_CONFIG = {
   maxAttempts: 4,
@@ -10,25 +10,28 @@ const RETRY_CONFIG = {
 } as const
 
 const MAX_ITERATIONS = 10
-const RETRYABLE_STATUS = new Set([429, 500, 529])
+const RETRYABLE_STATUS = new Set([429, 500, 503])
 
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
-    name: 'query_database',
-    description: '查询数据库中的记录。table 支持 users 和 orders，id 为记录编号',
-    input_schema: {
-      type: 'object',
-      properties: {
-        table: {
-          type: 'string',
-          description: '表名：users 或 orders',
+    type: 'function',
+    function: {
+      name: 'query_database',
+      description: '查询数据库中的记录。table 支持 users 和 orders，id 为记录编号',
+      parameters: {
+        type: 'object',
+        properties: {
+          table: {
+            type: 'string',
+            description: '表名：users 或 orders',
+          },
+          id: {
+            type: 'number',
+            description: '记录 ID',
+          },
         },
-        id: {
-          type: 'number',
-          description: '记录 ID',
-        },
+        required: ['table', 'id'],
       },
-      required: ['table', 'id'],
     },
   },
 ]
@@ -51,11 +54,11 @@ async function withRetry<T>(
     } catch (error) {
       lastError = error
 
-      if (!(error instanceof Anthropic.APIError)) {
+      if (!(error instanceof OpenAI.APIError)) {
         throw error
       }
 
-      if (!RETRYABLE_STATUS.has(error.status)) {
+      if (!RETRYABLE_STATUS.has(error.status ?? 0)) {
         throw error
       }
 
@@ -69,7 +72,7 @@ async function withRetry<T>(
 
       console.log(
         `[retry] attempt ${attempt + 1}/${maxAttempts} failed` +
-          ` (${error.status} ${error.error?.type ?? 'unknown'}).` +
+          ` (${error.status} ${error.type ?? 'unknown'}).` +
           ` Waiting ${Math.round(delay)}ms...`,
       )
 
@@ -100,7 +103,7 @@ function queryDatabase(table: string, id: number): string {
 }
 
 async function runAgent(userMessage: string): Promise<void> {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage },
   ]
 
@@ -111,37 +114,34 @@ async function runAgent(userMessage: string): Promise<void> {
     console.log(`\n[loop] iteration ${iterations}/${MAX_ITERATIONS}`)
 
     const response = await withRetry(() =>
-      client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 1024,
+      client.chat.completions.create({
+        model: 'gpt-4o',
         tools,
         messages,
       }),
     )
 
-    messages.push({ role: 'assistant', content: response.content })
+    const message = response.choices[0].message
+    messages.push(message)
 
-    if (response.stop_reason === 'end_turn') {
-      const text = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('')
-      console.log(`\nAgent: ${text}`)
+    if (message.content) {
+      console.log(`\nAgent: ${message.content}`)
+    }
+
+    if (response.choices[0].finish_reason === 'stop') {
       return
     }
 
-    if (response.stop_reason !== 'tool_use') {
-      console.log(`[warn] unexpected stop_reason: ${response.stop_reason ?? 'null'}`)
+    if (response.choices[0].finish_reason !== 'tool_calls' || !message.tool_calls) {
+      console.log(`[warn] unexpected finish_reason: ${response.choices[0].finish_reason}`)
       return
     }
 
-    const toolResults: Anthropic.ToolResultBlockParam[] = []
+    for (const toolCall of message.tool_calls) {
+      if (toolCall.type !== 'function') continue
 
-    for (const block of response.content) {
-      if (block.type !== 'tool_use') continue
-
-      const input = block.input as ToolInput
-      console.log(`[tool] ${block.name}(table="${input.table}", id=${input.id})`)
+      const input = JSON.parse(toolCall.function.arguments) as ToolInput
+      console.log(`[tool] ${toolCall.function.name}(table="${input.table}", id=${input.id})`)
 
       let content: string
       try {
@@ -153,14 +153,12 @@ async function runAgent(userMessage: string): Promise<void> {
         console.log(`[tool] failed: ${message}`)
       }
 
-      toolResults.push({
-        type: 'tool_result',
-        tool_use_id: block.id,
+      messages.push({
+        role: 'tool',
+        tool_call_id: toolCall.id,
         content,
       })
     }
-
-    messages.push({ role: 'user', content: toolResults })
   }
 
   console.log(`[warn] Agent reached maxIterations (${MAX_ITERATIONS}), terminating.`)

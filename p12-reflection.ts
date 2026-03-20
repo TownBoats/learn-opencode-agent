@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 interface ReflectionResult {
   passed: boolean
@@ -23,7 +23,7 @@ function isReflectionResult(value: unknown): value is ReflectionResult {
 }
 
 class Generator {
-  constructor(private readonly model = 'claude-opus-4-6') {}
+  constructor(private readonly model = 'gpt-4o') {}
 
   async generate(task: string, previousFeedback?: ReflectionResult): Promise<string> {
     const systemPrompt = `你是一位专业的技术写作者，擅长写清晰、有吸引力的技术内容。
@@ -41,22 +41,20 @@ ${previousFeedback.suggestions.map((suggestion, index) => `  ${index + 1}. ${sug
 请针对以上具体问题进行改进，同时保留上一版本做得好的部分。`
     }
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 }
 
 class Critic {
-  constructor(private readonly model = 'claude-opus-4-6') {}
+  constructor(private readonly model = 'gpt-4o') {}
 
   async evaluate(task: string, output: string): Promise<ReflectionResult> {
     const systemPrompt = `你是一位严格的技术内容评审专家。你的职责是客观评估内容质量，给出可执行的改进建议。
@@ -90,18 +88,15 @@ ${output}
 
 请严格按 JSON 格式输出评审结果。`
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
-      max_tokens: 512,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
     })
 
-    const responseText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
-      .trim()
+    const responseText = (response.choices[0].message.content ?? '').trim()
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {

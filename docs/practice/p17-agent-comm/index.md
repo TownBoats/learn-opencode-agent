@@ -8,7 +8,7 @@ description: 共享黑板、消息传递、Handoff 三种 Agent 协作通信模�
   difficulty="advanced"
   duration="60 min"
   :prerequisites="['P15', 'P16']"
-  :tags="['Multi-Agent', 'Communication', 'Blackboard', 'Handoff', 'TypeScript', 'Anthropic SDK']"
+  :tags="['Multi-Agent', 'Communication', 'Blackboard', 'Handoff', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 共享黑板、消息传递、Handoff 三种 Agent 协作通信模�
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P15`、`P16`
 - 本章建议入口命令：`bun run p17-agent-comm.ts`
 - 示例文件位置：仓库根目录 `p17-agent-comm.ts`
@@ -112,9 +112,9 @@ interface HandoffPayload {
 
 ```ts
 // p17-agent-comm.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const anthropic = new OpenAI()
 
 // ---- 黑板系统 ----
 
@@ -222,8 +222,8 @@ async function runResearcher(
 ): Promise<void> {
   console.log('\n[Researcher] 开始研究...')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 2048,
     system: [
       '你是一位研究员，专门负责收集和整理信息。',
@@ -246,7 +246,7 @@ async function runResearcher(
   })
 
   const text = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 
@@ -304,8 +304,8 @@ async function runWriter(
   // 从黑板读取所有研究成果
   const research = readAllFromBlackboard(board)
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 2048,
     system: [
       '你是一位专业写手，擅长将研究资料转化为流畅、有说服力的文章。',
@@ -324,7 +324,7 @@ async function runWriter(
   })
 
   const draft = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 
@@ -385,8 +385,8 @@ async function runEditor(handoff: HandoffPayload): Promise<string> {
   console.log(`  [Editor] 任务: ${handoff.task}`)
   console.log(`  [Editor] 约束: ${handoff.constraints.length} 条`)
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 2048,
     system: [
       '你是一位资深编辑，负责文章的最终润色和定稿。',
@@ -406,7 +406,7 @@ async function runEditor(handoff: HandoffPayload): Promise<string> {
   })
 
   return response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 }

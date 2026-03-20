@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 interface DeterministicCheck {
   type: 'keyword' | 'regex' | 'json-valid'
@@ -56,32 +56,26 @@ interface AgentConfig {
   systemPrompt: string
 }
 
-function textFromContent(content: Anthropic.ContentBlock[]): string {
-  return content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
-}
-
 async function runAgent(
   config: AgentConfig,
   userInput: string,
 ): Promise<{ output: string; latencyMs: number; tokenUsage: { input: number; output: number } }> {
   const start = Date.now()
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model: config.model,
-    max_tokens: 1024,
-    system: config.systemPrompt,
-    messages: [{ role: 'user', content: userInput }],
+    messages: [
+      { role: 'system', content: config.systemPrompt },
+      { role: 'user', content: userInput },
+    ],
   })
 
   return {
-    output: textFromContent(response.content).trim(),
+    output: (response.choices[0].message.content ?? '').trim(),
     latencyMs: Date.now() - start,
     tokenUsage: {
-      input: response.usage.input_tokens,
-      output: response.usage.output_tokens,
+      input: response.usage?.prompt_tokens ?? 0,
+      output: response.usage?.completion_tokens ?? 0,
     },
   }
 }
@@ -168,14 +162,15 @@ ${agentOutput}
 
 请严格按 JSON 格式输出评审结果。`
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 512,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
   })
 
-  const responseText = textFromContent(response.content).trim()
+  const responseText = (response.choices[0].message.content ?? '').trim()
   const jsonMatch = responseText.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
     return {
@@ -294,8 +289,8 @@ const testCases: TestCase[] = [
       '技术是否准确',
     ],
     deterministicChecks: [
-      { type: 'keyword', value: '类型', label: '包含“类型”关键词' },
-      { type: 'keyword', value: '推断', label: '包含“推断”关键词' },
+      { type: 'keyword', value: '类型', label: '包含"类型"关键词' },
+      { type: 'keyword', value: '推断', label: '包含"推断"关键词' },
     ],
   },
   {
@@ -439,13 +434,13 @@ function compareReports(a: EvalReport, b: EvalReport): void {
 async function main(): Promise<void> {
   const baselineConfig: AgentConfig = {
     name: 'A-基线配置',
-    model: 'claude-sonnet-4-20250514',
+    model: 'gpt-4o',
     systemPrompt: '你是一个通用 TypeScript 助手，请直接回答用户问题。',
   }
 
   const structuredConfig: AgentConfig = {
     name: 'B-结构化配置',
-    model: 'claude-sonnet-4-20250514',
+    model: 'gpt-4o',
     systemPrompt: [
       '你是一个高质量 TypeScript 助手。',
       '回答时优先保证技术准确性、结构清晰和格式遵循。',

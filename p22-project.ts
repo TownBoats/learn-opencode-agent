@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const client = new OpenAI()
 
 interface FileChange {
   filePath: string
@@ -87,38 +87,41 @@ function parseDiff(diffText: string): FileChange[] {
   return files
 }
 
-const findingsTool: Anthropic.Tool = {
-  name: 'submit_findings',
-  description: '提交结构化审查发现列表。',
-  input_schema: {
-    type: 'object',
-    properties: {
-      findings: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            file: { type: 'string', description: '文件路径' },
-            line: { type: 'number', description: '问题所在行号' },
-            severity: {
-              type: 'string',
-              enum: ['critical', 'warning', 'info'],
-              description: '问题严重等级',
+const findingsTool: OpenAI.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'submit_findings',
+    description: '提交结构化审查发现列表。',
+    parameters: {
+      type: 'object',
+      properties: {
+        findings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              file: { type: 'string', description: '文件路径' },
+              line: { type: 'number', description: '问题所在行号' },
+              severity: {
+                type: 'string',
+                enum: ['critical', 'warning', 'info'],
+                description: '问题严重等级',
+              },
+              category: {
+                type: 'string',
+                enum: ['security', 'quality', 'performance', 'naming', 'error-handling', 'typescript'],
+                description: '问题分类',
+              },
+              message: { type: 'string', description: '问题描述' },
+              suggestion: { type: 'string', description: '修复建议' },
             },
-            category: {
-              type: 'string',
-              enum: ['security', 'quality', 'performance', 'naming', 'error-handling', 'typescript'],
-              description: '问题分类',
-            },
-            message: { type: 'string', description: '问题描述' },
-            suggestion: { type: 'string', description: '修复建议' },
+            required: ['file', 'line', 'severity', 'category', 'message', 'suggestion'],
           },
-          required: ['file', 'line', 'severity', 'category', 'message', 'suggestion'],
         },
       },
+      required: ['findings'],
     },
-    required: ['findings'],
-  } as Anthropic.Tool.InputSchema,
+  },
 }
 
 function buildDiffSummary(changes: FileChange[]): string {
@@ -152,15 +155,15 @@ function isFinding(value: unknown): value is ReviewFinding {
   )
 }
 
-function extractFindings(response: Anthropic.Message, reviewerId: string): ReviewFinding[] {
-  for (const block of response.content) {
-    if (block.type !== 'tool_use' || block.name !== 'submit_findings') continue
+function extractFindings(response: OpenAI.ChatCompletion, reviewerId: string): ReviewFinding[] {
+  const message = response.choices[0]?.message
+  if (!message?.tool_calls) return []
 
-    const input =
-      typeof block.input === 'object' && block.input !== null
-        ? (block.input as Record<string, unknown>)
-        : {}
+  for (const toolCall of message.tool_calls) {
+    if (toolCall.type !== 'function') continue
+    if (toolCall.function.name !== 'submit_findings') continue
 
+    const input = JSON.parse(toolCall.function.arguments) as Record<string, unknown>
     const findings = input['findings']
     if (!Array.isArray(findings)) return []
     return findings.filter((finding): finding is ReviewFinding => isFinding(finding))
@@ -173,19 +176,22 @@ function extractFindings(response: Anthropic.Message, reviewerId: string): Revie
 async function runSecurityReview(changes: FileChange[]): Promise<ReviewResult> {
   console.log('[SecurityReviewer] 开始安全审查...')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 4096,
-    system: [
-      '你是一位资深安全审查专家。',
-      '你只关注安全问题，不评论代码风格或性能。',
-      '重点检查：SQL 注入、XSS、eval/Function、硬编码密钥、路径遍历、不安全文件操作。',
-      '如果没有问题，提交空数组。',
-      '审查完成后必须调用 submit_findings 工具提交结果。',
-    ].join('\n'),
     tools: [findingsTool],
-    tool_choice: { type: 'tool', name: 'submit_findings' },
+    tool_choice: { type: 'function', function: { name: 'submit_findings' } },
     messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位资深安全审查专家。',
+          '你只关注安全问题，不评论代码风格或性能。',
+          '重点检查：SQL 注入、XSS、eval/Function、硬编码密钥、路径遍历、不安全文件操作。',
+          '如果没有问题，提交空数组。',
+          '审查完成后必须调用 submit_findings 工具提交结果。',
+        ].join('\n'),
+      },
       {
         role: 'user',
         content: `请对以下代码变更进行安全审查：\n\n${buildDiffSummary(changes)}`,
@@ -201,19 +207,22 @@ async function runSecurityReview(changes: FileChange[]): Promise<ReviewResult> {
 async function runQualityReview(changes: FileChange[]): Promise<ReviewResult> {
   console.log('[QualityReviewer] 开始质量审查...')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 4096,
-    system: [
-      '你是一位资深代码质量审查专家。',
-      '你只关注代码质量问题，不评论安全漏洞。',
-      '重点检查：复杂度、命名、错误处理、TypeScript 实践、代码重复、可读性。',
-      '如果没有问题，提交空数组。',
-      '审查完成后必须调用 submit_findings 工具提交结果。',
-    ].join('\n'),
     tools: [findingsTool],
-    tool_choice: { type: 'tool', name: 'submit_findings' },
+    tool_choice: { type: 'function', function: { name: 'submit_findings' } },
     messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位资深代码质量审查专家。',
+          '你只关注代码质量问题，不评论安全漏洞。',
+          '重点检查：复杂度、命名、错误处理、TypeScript 实践、代码重复、可读性。',
+          '如果没有问题，提交空数组。',
+          '审查完成后必须调用 submit_findings 工具提交结果。',
+        ].join('\n'),
+      },
       {
         role: 'user',
         content: `请对以下代码变更进行代码质量审查：\n\n${buildDiffSummary(changes)}`,
@@ -295,15 +304,18 @@ async function generateReport(
     )
     .join('\n')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 1024,
-    system: [
-      '你是一位代码审查报告撰写专家。',
-      '根据结构化发现列表写一段 3-5 句的总结。',
-      '总结要突出最严重的问题、整体风险和优先修复方向。',
-    ].join('\n'),
     messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位代码审查报告撰写专家。',
+          '根据结构化发现列表写一段 3-5 句的总结。',
+          '总结要突出最严重的问题、整体风险和优先修复方向。',
+        ].join('\n'),
+      },
       {
         role: 'user',
         content: [
@@ -317,10 +329,8 @@ async function generateReport(
     ],
   })
 
-  const summary = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  const summary =
+    response.choices[0]?.message.content?.trim() ?? '无法生成摘要'
 
   console.log('[ReportGenerator] 报告生成完成')
 

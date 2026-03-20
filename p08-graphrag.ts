@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
 interface Entity {
   id: string
@@ -106,12 +106,12 @@ class KnowledgeGraph {
 }
 
 class GraphRAGAgent {
-  private readonly client: Anthropic
+  private readonly client: OpenAI
   private readonly graph: KnowledgeGraph
   private readonly allEntityNames: string[]
 
   constructor(graph: KnowledgeGraph, entityNames: string[]) {
-    this.client = new Anthropic()
+    this.client = new OpenAI()
     this.graph = graph
     this.allEntityNames = entityNames
   }
@@ -186,17 +186,15 @@ class GraphRAGAgent {
 请基于这些上下文信息回答问题，如果上下文不足以回答，请明确说明。`
 
     const userMessage = `${graphContext}\n\n问题: ${question}`
-    const response = await this.client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 512,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
     })
 
-    const answer = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const answer = response.choices[0].message.content ?? ''
 
     console.log(`\n回答: ${answer}`)
   }

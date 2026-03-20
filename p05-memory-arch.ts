@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { readFile, writeFile } from 'fs/promises'
 
-type MessageParam = Anthropic.MessageParam
+type MessageParam = OpenAI.ChatCompletionMessageParam
 type LongTermStore = Record<string, string>
 
 class ShortTermMemory {
@@ -83,13 +83,13 @@ class LongTermMemory {
 }
 
 class MemoryAgent {
-  private readonly client: Anthropic
+  private readonly client: OpenAI
   private readonly shortTerm: ShortTermMemory
   private readonly working: WorkingMemory
   private readonly longTerm: LongTermMemory
 
   constructor(memoryFilePath?: string) {
-    this.client = new Anthropic()
+    this.client = new OpenAI()
     this.shortTerm = new ShortTermMemory()
     this.working = new WorkingMemory()
     this.longTerm = new LongTermMemory(memoryFilePath)
@@ -119,17 +119,15 @@ ${memoryLines}
   async chat(userMessage: string): Promise<string> {
     this.shortTerm.add('user', userMessage)
 
-    const response = await this.client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1024,
-      system: this.buildSystemPrompt(),
-      messages: this.shortTerm.getAll(),
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: this.buildSystemPrompt() },
+        ...this.shortTerm.getAll(),
+      ],
     })
 
-    const assistantText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const assistantText = response.choices[0].message.content ?? ''
 
     this.shortTerm.add('assistant', assistantText)
     return assistantText

@@ -48,7 +48,7 @@ withDefaults(defineProps<Props>(), {
       <p class="track-subtitle">{{ practiceProjects }} 个可运行示例 · {{ practicePhases }} 个阶段</p>
       <ul class="track-highlights">
         <li>从最小 Agent 到生产部署</li>
-        <li>Anthropic SDK + TypeScript</li>
+        <li>OpenAI SDK + TypeScript</li>
         <li>每章可独立运行验证</li>
         <li>完整 Code Review Agent 项目</li>
         <li>记忆系统、RAG、多 Agent 编排</li>

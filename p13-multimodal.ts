@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 type SupportedImageMediaType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
 
@@ -10,23 +10,22 @@ type ImageSource =
   | { type: 'base64'; mediaType: SupportedImageMediaType; data: string }
   | { type: 'url'; url: string }
 
-function toImageBlock(source: ImageSource): Anthropic.ImageBlockParam {
+function toImageContent(
+  source: ImageSource,
+): OpenAI.ChatCompletionContentPartImage {
   if (source.type === 'url') {
     return {
-      type: 'image',
-      source: {
-        type: 'url',
+      type: 'image_url',
+      image_url: {
         url: source.url,
       },
     }
   }
 
   return {
-    type: 'image',
-    source: {
-      type: 'base64',
-      media_type: source.mediaType,
-      data: source.data,
+    type: 'image_url',
+    image_url: {
+      url: `data:${source.mediaType};base64,${source.data}`,
     },
   }
 }
@@ -53,24 +52,20 @@ async function loadImageAsBase64(filePath: string): Promise<ImageSource> {
 }
 
 class MultimodalAgent {
-  constructor(private readonly model = 'claude-sonnet-4-20250514') {}
+  constructor(private readonly model = 'gpt-4o') {}
 
   async analyzeImage(imageSource: ImageSource, question: string): Promise<string> {
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
-      max_tokens: 1024,
       messages: [
         {
           role: 'user',
-          content: [toImageBlock(imageSource), { type: 'text', text: question }],
+          content: [toImageContent(imageSource), { type: 'text', text: question }],
         },
       ],
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 
   async compareImages(images: ImageSource[], question: string): Promise<string> {
@@ -78,21 +73,17 @@ class MultimodalAgent {
       throw new Error('compareImages 需要至少一张图像')
     }
 
-    const content: Anthropic.ContentBlockParam[] = [
-      ...images.map((image) => toImageBlock(image)),
+    const content: OpenAI.ChatCompletionContentPart[] = [
+      ...images.map((image) => toImageContent(image)),
       { type: 'text', text: question },
     ]
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
-      max_tokens: 1024,
       messages: [{ role: 'user', content }],
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 
   async extractTextFromImage(imageSource: ImageSource): Promise<string> {
@@ -103,21 +94,17 @@ class MultimodalAgent {
 - 只输出图片中实际存在的文字，不要添加任何解释或说明
 - 如果图片中没有文字，输出"（未检测到文字内容）"`
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
-      max_tokens: 2048,
       messages: [
         {
           role: 'user',
-          content: [toImageBlock(imageSource), { type: 'text', text: prompt }],
+          content: [toImageContent(imageSource), { type: 'text', text: prompt }],
         },
       ],
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 }
 

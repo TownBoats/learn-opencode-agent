@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
@@ -158,14 +158,14 @@ class CircuitBreaker {
 }
 
 class ProductionAgent {
-  private readonly client: Anthropic
+  private readonly client: OpenAI
   private readonly config: ProductionConfig
   private readonly rateLimiter: TokenBucketRateLimiter
   private readonly circuitBreakers = new Map<string, CircuitBreaker>()
   private readonly startTime: number
 
   constructor(config: ProductionConfig) {
-    this.client = new Anthropic()
+    this.client = new OpenAI()
     this.config = config
     this.rateLimiter = new TokenBucketRateLimiter(config.rateLimiter)
     this.startTime = Date.now()
@@ -182,19 +182,18 @@ class ProductionAgent {
 
   private async callWithTimeout(
     model: string,
-    messages: Anthropic.MessageParam[],
+    messages: OpenAI.ChatCompletionMessageParam[],
     system: string,
-  ): Promise<Anthropic.Message> {
+  ): Promise<OpenAI.ChatCompletion> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), this.config.timeoutMs)
 
     try {
-      return await this.client.messages.create(
+      return await this.client.chat.completions.create(
         {
           model,
           max_tokens: 1024,
-          system,
-          messages,
+          messages: [{ role: 'system', content: system }, ...messages],
         },
         { signal: controller.signal },
       )
@@ -204,7 +203,7 @@ class ProductionAgent {
   }
 
   async chat(
-    messages: Anthropic.MessageParam[],
+    messages: OpenAI.ChatCompletionMessageParam[],
     system = 'You are a helpful assistant.',
   ): Promise<string> {
     const model = this.config.model
@@ -221,13 +220,10 @@ class ProductionAgent {
       const response = await this.callWithTimeout(model, messages, system)
       breaker.recordSuccess()
 
-      const text = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('')
+      const text = response.choices[0]?.message.content?.trim() ?? ''
 
       console.log(
-        `[Production] 成功 | model=${model} input=${response.usage.input_tokens} output=${response.usage.output_tokens}`,
+        `[Production] 成功 | model=${model} input=${response.usage?.prompt_tokens ?? 0} output=${response.usage?.completion_tokens ?? 0}`,
       )
       return text
     } catch (error) {
@@ -303,7 +299,7 @@ async function closeServer(server: Server): Promise<void> {
 
 async function main(): Promise<void> {
   const agent = new ProductionAgent({
-    model: 'claude-sonnet-4-20250514',
+    model: 'gpt-4o',
     fallbackMessage: '抱歉，服务暂时不可用，请稍后再试。',
     timeoutMs: 30_000,
     rateLimiter: {

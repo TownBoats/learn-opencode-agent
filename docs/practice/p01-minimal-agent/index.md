@@ -8,7 +8,7 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
   difficulty="beginner"
   duration="45 min"
   :prerequisites="[]"
-  :tags="['Anthropic SDK', 'Tool Calling', 'TypeScript']"
+  :tags="['OpenAI SDK', 'Tool Calling', 'TypeScript']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 前置章节：无，可直接开始
 - 本章建议入口命令：`bun run p01-minimal-agent.ts`
 - 示例文件位置：仓库根目录 `p01-minimal-agent.ts`
@@ -29,8 +29,8 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
 大多数人第一次用 LLM API，都是这样写的：
 
 ```ts
-const response = await client.messages.create({
-  model: 'claude-opus-4-6',
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
   messages: [{ role: 'user', content: '北京今天天气怎么样？' }]
 })
 ```
@@ -71,12 +71,12 @@ const response = await client.messages.create({
 
 ```ts
 // p01-minimal-agent.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 // 工具声明：告诉模型这个工具做什么、需要什么参数
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
     name: 'get_weather',
     description: '查询指定城市的当前天气',
@@ -112,13 +112,13 @@ function get_weather(city: string): string {
 
 ```ts
 async function runAgent(userMessage: string) {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage }
   ]
 
   while (true) {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1024,
       tools,
       messages,
@@ -140,7 +140,7 @@ async function runAgent(userMessage: string) {
 
     if (response.stop_reason === 'tool_use') {
       // 模型要调用工具，逐个执行并收集结果
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
 
       for (const block of response.content) {
         if (block.type !== 'tool_use') continue

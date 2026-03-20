@@ -115,8 +115,8 @@ oh-my-openagent 会从两个位置加载配置，然后合并：
 {
   "background_task": {
     "concurrency_limits": {
-      "anthropic": 5,   // Anthropic 模型最多同时跑 5 个后台任务
-      "openai": 3       // OpenAI 模型最多 3 个
+      "openai": 5,      // OpenAI 模型最多同时跑 5 个后台任务
+      "google": 3       // Google 模型最多 3 个
     }
   }
 }

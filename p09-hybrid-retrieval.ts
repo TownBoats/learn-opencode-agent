@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
 interface RetrievalResult {
   id: string
@@ -185,11 +185,11 @@ class HybridRetriever {
 }
 
 class HybridRAGAgent {
-  private readonly client: Anthropic
+  private readonly client: OpenAI
   private readonly retriever: HybridRetriever
 
   constructor(retriever: HybridRetriever) {
-    this.client = new Anthropic()
+    this.client = new OpenAI()
     this.retriever = retriever
   }
 
@@ -211,17 +211,15 @@ class HybridRAGAgent {
       ? `你是一个技术助手，请基于提供的文档内容准确回答问题，用中文简洁作答。\n\n${context}`
       : '你是一个技术助手，用中文简洁作答。'
 
-    const response = await this.client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 512,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 }
 

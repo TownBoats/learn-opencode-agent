@@ -24,7 +24,7 @@ description: 在开始实践篇之前，先确认本地环境、依赖、API Key
 | Node.js | 20+ | 兼容现代 ESM、VitePress、常见 Agent SDK |
 | Bun | 1.1+ | 文中运行命令默认使用 `bun run` / `bun add` |
 | 包管理器 | `pnpm` 或 `bun` 任选一种 | 安装文档站点依赖，后续也可用于示例工程 |
-| Anthropic API Key | 必需 | 涉及 `@anthropic-ai/sdk` 的章节都要用到 |
+| OpenAI API Key | 必需 | 涉及 `openai` 的章节都要用到 |
 | 一个终端 | 必需 | 绝大多数示例都以命令行方式运行 |
 
 ## 两种使用方式
@@ -40,7 +40,7 @@ pnpm dev
 
 然后访问本地 VitePress 页面即可。
 
-这个模式下，你不需要立刻安装 `@anthropic-ai/sdk`，也不需要配置 `ANTHROPIC_API_KEY`。
+这个模式下，你不需要立刻安装 `openai`，也不需要配置 `OPENAI_API_KEY`。
 
 ### 方式二：边读边实现实践篇示例
 
@@ -49,7 +49,7 @@ pnpm dev
 最小依赖通常包括：
 
 ```bash
-bun add @anthropic-ai/sdk
+bun add openai
 ```
 
 部分章节还会额外需要其他依赖。例如：
@@ -63,27 +63,27 @@ bun add @anthropic-ai/sdk
 
 | 分组 | 覆盖章节 | 说明 |
 |------|----------|------|
-| 基础组 | `P1-P23` | 全部章节默认都要 `@anthropic-ai/sdk` |
+| 基础组 | `P1-P23` | 全部章节默认都要 `openai` |
 | MCP 扩展组 | `P14` | 额外需要 `@modelcontextprotocol/sdk` |
 
-也就是说，如果你不打算先做 `P14`，当前只装 `@anthropic-ai/sdk` 就足够开始大部分实践章节。
+也就是说，如果你不打算先做 `P14`，当前只装 `openai` 就足够开始大部分实践章节。
 
 ## API Key 配置
 
 只要代码里出现下面这种写法：
 
 ```ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 ```
 
-就意味着运行时默认会从环境变量读取 `ANTHROPIC_API_KEY`。
+就意味着运行时默认会从环境变量读取 `OPENAI_API_KEY`。
 
 推荐在本地 shell 中先配置：
 
 ```bash
-export ANTHROPIC_API_KEY="你的真实 Key"
+export OPENAI_API_KEY="你的真实 Key"
 ```
 
 如果你使用 `zsh`，可以把这行写入 `~/.zshrc` 后重新加载：
@@ -95,7 +95,7 @@ source ~/.zshrc
 建议你先验证环境变量是否生效：
 
 ```bash
-echo $ANTHROPIC_API_KEY
+echo $OPENAI_API_KEY
 ```
 
 你应该能看到非空输出。不要把真实 Key 提交到仓库，也不要直接硬编码进示例源码。
@@ -142,7 +142,7 @@ echo $ANTHROPIC_API_KEY
 建议你按下面顺序开始，而不是直接跳进后面的高级章节：
 
 1. 先读 `P1`，直接运行仓库已提供的最小示例文件。
-2. 确认 `@anthropic-ai/sdk` 和 `ANTHROPIC_API_KEY` 都已就绪。
+2. 确认 `openai` 和 `OPENAI_API_KEY` 都已就绪。
 3. 跑通一次最小调用后，再进入 `P2` 到 `P4`。
 4. 等 `P1-P4` 都稳定后，再进入 RAG、多 Agent、生产化章节。
 
@@ -162,23 +162,23 @@ echo $ANTHROPIC_API_KEY
 
 ## 常见报错与排查
 
-### 1. `Cannot find package '@anthropic-ai/sdk'`
+### 1. `Cannot find package 'openai'`
 
 说明依赖还没安装。
 
 ```bash
-bun add @anthropic-ai/sdk
+bun add openai
 ```
 
-### 2. `ANTHROPIC_API_KEY` 未配置
+### 2. `OPENAI_API_KEY` 未配置
 
 说明环境变量没有生效。先重新执行：
 
 ```bash
-export ANTHROPIC_API_KEY="你的真实 Key"
+export OPENAI_API_KEY="你的真实 Key"
 ```
 
-然后用 `echo $ANTHROPIC_API_KEY` 检查是否为空。
+然后用 `echo $OPENAI_API_KEY` 检查是否为空。
 
 ### 3. `bun run pxx-*.ts` 找不到文件
 

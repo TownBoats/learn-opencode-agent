@@ -1,9 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const client = new OpenAI()
 
 interface ToolDefinition {
-  schema: Anthropic.Tool
+  schema: OpenAI.ChatCompletionTool
   execute: (input: Record<string, string>) => Promise<string>
 }
 
@@ -30,14 +30,17 @@ interface SubTaskSpec {
 
 const webSearchTool: ToolDefinition = {
   schema: {
-    name: 'web_search',
-    description: '搜索网络获取相关信息，返回搜索结果摘要',
-    input_schema: {
-      type: 'object',
-      properties: {
-        query: { type: 'string', description: '搜索关键词' },
+    type: 'function',
+    function: {
+      name: 'web_search',
+      description: '搜索网络获取相关信息，返回搜索结果摘要',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: '搜索关键词' },
+        },
+        required: ['query'],
       },
-      required: ['query'],
     },
   },
   execute: async (input) => {
@@ -50,15 +53,18 @@ const webSearchTool: ToolDefinition = {
 
 const summarizeTool: ToolDefinition = {
   schema: {
-    name: 'summarize',
-    description: '将一段文本压缩为结构化摘要',
-    input_schema: {
-      type: 'object',
-      properties: {
-        text: { type: 'string', description: '需要总结的文本' },
-        focus: { type: 'string', description: '总结的侧重点' },
+    type: 'function',
+    function: {
+      name: 'summarize',
+      description: '将一段文本压缩为结构化摘要',
+      parameters: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: '需要总结的文本' },
+          focus: { type: 'string', description: '总结的侧重点' },
+        },
+        required: ['text'],
       },
-      required: ['text'],
     },
   },
   execute: async (input) => {
@@ -69,14 +75,17 @@ const summarizeTool: ToolDefinition = {
 
 const readFileTool: ToolDefinition = {
   schema: {
-    name: 'read_file',
-    description: '读取指定路径的文件内容',
-    input_schema: {
-      type: 'object',
-      properties: {
-        path: { type: 'string', description: '文件路径' },
+    type: 'function',
+    function: {
+      name: 'read_file',
+      description: '读取指定路径的文件内容',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: '文件路径' },
+        },
+        required: ['path'],
       },
-      required: ['path'],
     },
   },
   execute: async (input) => {
@@ -91,18 +100,21 @@ export { processData }`
 
 const analyzeCodeTool: ToolDefinition = {
   schema: {
-    name: 'analyze_code',
-    description: '对一段代码执行静态分析，返回问题列表',
-    input_schema: {
-      type: 'object',
-      properties: {
-        code: { type: 'string', description: '要分析的代码' },
-        dimension: {
-          type: 'string',
-          description: '分析维度：security | performance | quality',
+    type: 'function',
+    function: {
+      name: 'analyze_code',
+      description: '对一段代码执行静态分析，返回问题列表',
+      parameters: {
+        type: 'object',
+        properties: {
+          code: { type: 'string', description: '要分析的代码' },
+          dimension: {
+            type: 'string',
+            description: '分析维度：security | performance | quality',
+          },
         },
+        required: ['code', 'dimension'],
       },
-      required: ['code', 'dimension'],
     },
   },
   execute: async (input) => {
@@ -127,7 +139,7 @@ function isSubTaskSpec(value: unknown): value is SubTaskSpec {
 
 class SubAgent {
   private readonly config: SubAgentConfig
-  private messages: Anthropic.MessageParam[] = []
+  private messages: OpenAI.ChatCompletionMessageParam[] = []
   private callLog: string[] = []
   private lastAssistantText = ''
 
@@ -138,7 +150,10 @@ class SubAgent {
   async run(task: string): Promise<SubAgentResult> {
     console.log(`  [${this.config.name}] 启动，任务: ${task.slice(0, 60)}...`)
 
-    this.messages = [{ role: 'user', content: task }]
+    this.messages = [
+      { role: 'system', content: this.config.systemPrompt },
+      { role: 'user', content: task },
+    ]
     this.callLog = []
     this.lastAssistantText = ''
     const toolSchemas = this.config.tools.map((tool) => tool.schema)
@@ -147,24 +162,18 @@ class SubAgent {
     while (iterations < this.config.maxIterations) {
       iterations += 1
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        system: this.config.systemPrompt,
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         tools: toolSchemas,
         messages: this.messages,
       })
 
-      const textBlocks = response.content.filter(
-        (block): block is Anthropic.TextBlock => block.type === 'text',
-      )
-      this.lastAssistantText = textBlocks.map((block) => block.text).join('')
+      const message = response.choices[0].message
+      this.lastAssistantText = message.content ?? ''
 
-      const toolUseBlocks = response.content.filter(
-        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
-      )
+      const toolCalls = message.tool_calls ?? []
 
-      if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
+      if (response.choices[0].finish_reason === 'stop' || toolCalls.length === 0) {
         console.log(
           `  [${this.config.name}] 完成，${iterations} 轮，${this.callLog.length} 次工具调用`,
         )
@@ -176,42 +185,43 @@ class SubAgent {
         }
       }
 
-      this.messages.push({ role: 'assistant', content: response.content })
+      this.messages.push(message)
 
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      for (const toolCall of toolCalls) {
+        if (toolCall.type !== 'function') continue
 
-      for (const toolUse of toolUseBlocks) {
-        const toolDef = this.config.tools.find((tool) => tool.schema.name === toolUse.name)
+        const toolDef = this.config.tools.find((tool) => {
+          if (tool.schema.type === 'function') {
+            return tool.schema.function.name === toolCall.function.name
+          }
+          return false
+        })
         if (!toolDef) {
-          toolResults.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: `错误：未知工具 ${toolUse.name}`,
-            is_error: true,
+          this.messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: `错误：未知工具 ${toolCall.function.name}`,
           })
           continue
         }
 
-        this.callLog.push(toolUse.name)
-        console.log(`  [${this.config.name}] 调用工具: ${toolUse.name}`)
+        this.callLog.push(toolCall.function.name)
+        console.log(`  [${this.config.name}] 调用工具: ${toolCall.function.name}`)
 
-        const input =
-          typeof toolUse.input === 'object' && toolUse.input !== null
-            ? (toolUse.input as Record<string, string>)
-            : {}
-
+        const input = JSON.parse(toolCall.function.arguments) as Record<string, string>
         const result = await toolDef.execute(input)
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolUse.id,
+
+        this.messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
           content: result,
         })
       }
-
-      this.messages.push({ role: 'user', content: toolResults })
     }
 
-    console.log(`  [${this.config.name}] 达到最大迭代次数 (${this.config.maxIterations})，强制返回`)
+    console.log(
+      `  [${this.config.name}] 达到最大迭代次数 (${this.config.maxIterations})，强制返回`,
+    )
 
     return {
       agentName: this.config.name,
@@ -264,23 +274,24 @@ async function runWithTimeout(
 async function orchestrate(userMessage: string): Promise<string> {
   console.log(`用户: ${userMessage}\n`)
 
-  const planResponse = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 2048,
-    system: [
-      '你是一个任务编排器。分析用户请求，将其拆解为子任务列表。',
-      '每个子任务必须包含 id、title、description 和 agentType。',
-      'agentType 只能是 "research"（需要搜索资料）或 "code"（需要分析代码）。',
-      '用 JSON 格式输出子任务数组，不要输出其他内容。',
-      '格式：[{"id":"...","title":"...","description":"...","agentType":"research|code"}]',
-    ].join('\n'),
-    messages: [{ role: 'user', content: userMessage }],
+  const planResponse = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一个任务编排器。分析用户请求，将其拆解为子任务列表。',
+          '每个子任务必须包含 id、title、description 和 agentType。',
+          'agentType 只能是 "research"（需要搜索资料）或 "code"（需要分析代码）。',
+          '用 JSON 格式输出子任务数组，不要输出其他内容。',
+          '格式：[{"id":"...","title":"...","description":"...","agentType":"research|code"}]',
+        ].join('\n'),
+      },
+      { role: 'user', content: userMessage },
+    ],
   })
 
-  const planText = planResponse.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  const planText = planResponse.choices[0].message.content ?? ''
 
   const jsonMatch = planText.match(/\[[\s\S]*\]/)
   if (!jsonMatch) {
@@ -342,12 +353,14 @@ async function orchestrate(userMessage: string): Promise<string> {
       ? `\n\n### 失败的子任务\n${failures.map((failure) => `- ${failure.taskId}: ${failure.error}`).join('\n')}`
       : ''
 
-  const synthesisResponse = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 4096,
-    system:
-      '你是一个报告聚合专家。将多个子 Agent 的输出整合为一份结构清晰的综合报告。提炼核心发现，去除重复，解决冲突。',
+  const synthesisResponse = await client.chat.completions.create({
+    model: 'gpt-4o',
     messages: [
+      {
+        role: 'system',
+        content:
+          '你是一个报告聚合专家。将多个子 Agent 的输出整合为一份结构清晰的综合报告。提炼核心发现，去除重复，解决冲突。',
+      },
       {
         role: 'user',
         content: `以下是各子 Agent 的执行结果：\n\n${workerOutputs}${failureReport}\n\n请整合为一份综合报告。`,
@@ -355,10 +368,7 @@ async function orchestrate(userMessage: string): Promise<string> {
     ],
   })
 
-  return synthesisResponse.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  return synthesisResponse.choices[0].message.content ?? ''
 }
 
 async function main(): Promise<void> {

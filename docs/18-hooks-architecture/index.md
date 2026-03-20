@@ -185,7 +185,7 @@ sequenceDiagram
 
 ### Hook 3：anthropicContextWindowLimitRecovery（上下文窗口恢复）
 
-这是整个系统最复杂的 Hook 之一，用于应对 Anthropic 模型的上下文窗口限制（200K token）。
+这是整个系统最复杂的 Hook 之一，用于应对模型的上下文窗口限制（如 200K token）。
 
 **多策略恢复**：
 

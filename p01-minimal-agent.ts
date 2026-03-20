@@ -1,20 +1,23 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
-    name: 'get_weather',
-    description: '查询指定城市的当前天气',
-    input_schema: {
-      type: 'object',
-      properties: {
-        city: {
-          type: 'string',
-          description: '城市名称，如"北京"、"上海"',
+    type: 'function',
+    function: {
+      name: 'get_weather',
+      description: '查询指定城市的当前天气',
+      parameters: {
+        type: 'object',
+        properties: {
+          city: {
+            type: 'string',
+            description: '城市名称，如"北京"、"上海"',
+          },
         },
+        required: ['city'],
       },
-      required: ['city'],
     },
   },
 ]
@@ -29,59 +32,54 @@ function getWeather(city: string): string {
 }
 
 async function runAgent(userMessage: string): Promise<void> {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage },
   ]
 
   while (true) {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1024,
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
       tools,
       messages,
     })
 
-    messages.push({ role: 'assistant', content: response.content })
+    const message = response.choices[0].message
+    messages.push(message)
 
-    if (response.stop_reason === 'end_turn') {
-      const text = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('')
-      console.log(`Agent: ${text}`)
+    if (message.content) {
+      console.log(`Agent: ${message.content}`)
+    }
+
+    if (response.choices[0].finish_reason === 'stop') {
       return
     }
 
-    if (response.stop_reason !== 'tool_use') {
-      console.log(`未处理的 stop_reason: ${response.stop_reason ?? 'null'}`)
+    if (response.choices[0].finish_reason !== 'tool_calls' || !message.tool_calls) {
+      console.log(`未处理的 finish_reason: ${response.choices[0].finish_reason}`)
       return
     }
 
-    const toolResults: Anthropic.ToolResultBlockParam[] = []
+    for (const toolCall of message.tool_calls) {
+      if (toolCall.type !== 'function') continue
 
-    for (const block of response.content) {
-      if (block.type !== 'tool_use') continue
-
-      console.log(`Tool call: ${block.name}(${JSON.stringify(block.input)})`)
+      console.log(`Tool call: ${toolCall.function.name}(${toolCall.function.arguments})`)
 
       let result: string
-      if (block.name === 'get_weather') {
-        const input = block.input as { city?: string }
+      if (toolCall.function.name === 'get_weather') {
+        const input = JSON.parse(toolCall.function.arguments) as { city?: string }
         result = getWeather(input.city ?? '')
       } else {
-        result = `Unknown tool: ${block.name}`
+        result = `Unknown tool: ${toolCall.function.name}`
       }
 
       console.log(`Tool result: ${result}`)
 
-      toolResults.push({
-        type: 'tool_result',
-        tool_use_id: block.id,
+      messages.push({
+        role: 'tool',
+        tool_call_id: toolCall.id,
         content: result,
       })
     }
-
-    messages.push({ role: 'user', content: toolResults })
   }
 }
 

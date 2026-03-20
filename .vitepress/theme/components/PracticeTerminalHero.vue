@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const LINES = [
   { text: '$ bun run p01-minimal-agent.ts', color: '#f97316' },
-  { text: '✓ Anthropic SDK initialized', color: '#86efac' },
+  { text: '✓ OpenAI SDK initialized', color: '#86efac' },
   { text: '✓ Tool registered: get_weather', color: '#86efac' },
   { text: 'Agent: 我需要查询北京的天气...', color: '#93c5fd' },
   { text: 'Tool call: get_weather({ city: "北京" })', color: '#d1d5db' },

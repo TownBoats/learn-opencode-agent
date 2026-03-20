@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
 interface MemoryEntry {
   id: string
@@ -69,12 +69,12 @@ class MemoryBank {
 }
 
 class MemoryAgent {
-  private readonly client: Anthropic
+  private readonly client: OpenAI
   private readonly bank: MemoryBank
   private readonly baseSystemPrompt: string
 
   constructor(bank: MemoryBank, systemPrompt = '') {
-    this.client = new Anthropic()
+    this.client = new OpenAI()
     this.bank = bank
     this.baseSystemPrompt = systemPrompt
   }
@@ -96,17 +96,20 @@ class MemoryAgent {
       ? `${this.baseSystemPrompt}\n\n${memoryContext}`.trim()
       : this.baseSystemPrompt
 
-    const response = await this.client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 512,
-      system: systemPrompt || undefined,
-      messages: [{ role: 'user', content: userMessage }],
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'user', content: userMessage },
+    ]
+
+    if (systemPrompt) {
+      messages.unshift({ role: 'system', content: systemPrompt })
+    }
+
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      messages,
     })
 
-    return response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    return response.choices[0].message.content ?? ''
   }
 }
 

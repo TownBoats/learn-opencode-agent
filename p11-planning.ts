@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 interface PlanStep {
   id: string
@@ -111,10 +111,12 @@ function extractJsonBlock(text: string): string | null {
 
 class Planner {
   async createPlan(goal: string): Promise<PlanStep[]> {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1024,
-      system: `你是一个任务规划器。将用户目标分解为 3-6 个有序的、可独立执行的步骤。
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `你是一个任务规划器。将用户目标分解为 3-6 个有序的、可独立执行的步骤。
 
 要求：
 - 步骤要具体，每步只做一件事
@@ -125,13 +127,12 @@ class Planner {
   {"id": "step_1", "description": "步骤描述"},
   {"id": "step_2", "description": "步骤描述"}
 ]`,
-      messages: [{ role: 'user', content: `目标：${goal}` }],
+        },
+        { role: 'user', content: `目标：${goal}` },
+      ],
     })
 
-    const text = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const text = response.choices[0].message.content ?? ''
 
     return this.parseSteps(text)
   }
@@ -146,10 +147,12 @@ class Planner {
       .map((step) => `- ${step.description}：${(step.result ?? '').slice(0, 80)}`)
       .join('\n')
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1024,
-      system: `你是一个任务规划器。任务执行过程中某个步骤失败了，你需要重新规划剩余步骤。
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `你是一个任务规划器。任务执行过程中某个步骤失败了，你需要重新规划剩余步骤。
 
 要求：
 - 不要重复已完成的步骤
@@ -160,7 +163,7 @@ class Planner {
   {"id": "step_revised_1", "description": "步骤描述"},
   {"id": "step_revised_2", "description": "步骤描述"}
 ]`,
-      messages: [
+        },
         {
           role: 'user',
           content: `已完成的步骤：
@@ -174,10 +177,7 @@ ${completedSummary || '无'}
       ],
     })
 
-    const text = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const text = response.choices[0].message.content ?? ''
 
     return this.parseSteps(text)
   }
@@ -242,17 +242,15 @@ TOOL_CALL: {"tool": "工具名", "input": {"参数名": "参数值"}}
       context ? `前序步骤结果：\n${context}\n\n` : ''
     }当前步骤：${step.description}`
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }],
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
     })
 
-    const text = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const text = response.choices[0].message.content ?? ''
 
     const marker = 'TOOL_CALL:'
     const markerIndex = text.indexOf(marker)
@@ -393,3 +391,4 @@ main().catch((error) => {
   console.error(error)
   process.exitCode = 1
 })
+

@@ -1,13 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }
 
-function messageToText(message: Anthropic.MessageParam): string {
+function messageToText(message: OpenAI.ChatCompletionMessageParam): string {
   if (typeof message.content === 'string') return message.content
+  if (!message.content) return ''
 
   return message.content
     .map((block) => {
@@ -18,7 +19,7 @@ function messageToText(message: Anthropic.MessageParam): string {
 }
 
 class ChatSession {
-  private messages: Anthropic.MessageParam[] = []
+  private messages: OpenAI.ChatCompletionMessageParam[] = []
   private readonly systemPrompt: string
   private readonly maxTokenEstimate: number
 
@@ -56,17 +57,15 @@ class ChatSession {
     this.addMessage('user', userInput)
     this.trimHistory(this.maxTokenEstimate)
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: this.systemPrompt,
-      messages: this.messages,
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: this.systemPrompt },
+        ...this.messages,
+      ],
     })
 
-    const assistantText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
+    const assistantText = response.choices[0].message.content ?? ''
 
     this.addMessage('assistant', assistantText)
     return assistantText

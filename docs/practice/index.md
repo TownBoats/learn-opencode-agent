@@ -17,7 +17,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 # AI Agent 实战手册
 
-**23 个项目 · 可跟打实现 · Anthropic SDK + TypeScript**
+**23 个项目 · 可跟打实现 · OpenAI SDK + TypeScript**
 
 <div class="practice-actions">
   <a href="/practice/setup" class="btn-secondary">开始前先看</a>
@@ -47,7 +47,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 ## 技术覆盖
 
 <PracticeTagCloud :tags="[
-  'Anthropic SDK', 'Tool Calling', 'Streaming', 'Multi-turn',
+  'OpenAI SDK', 'Tool Calling', 'Streaming', 'Multi-turn',
   'Memory System', 'RAG', 'GraphRAG', 'Hybrid Retrieval',
   'ReAct', 'Planning', 'Reflection', 'Multimodal',
   'MCP', 'Multi-Agent', 'Cost Control', 'Security',
@@ -64,12 +64,12 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 | 依赖组 | 章节范围 | 需要安装 |
 |--------|----------|----------|
-| 通用基础组 | `P1-P23` | `@anthropic-ai/sdk` |
+| 通用基础组 | `P1-P23` | `openai` |
 | MCP 扩展组 | `P14` | `@modelcontextprotocol/sdk` |
 
 补充说明：
 
-- 除 `P14` 外，其余章节当前都只依赖 `@anthropic-ai/sdk` 和 Node 内置模块。
+- 除 `P14` 外，其余章节当前都只依赖 `openai` 和 Node 内置模块。
 - `P23` 的健康检查示例使用的是 `node:http`，不需要额外安装 Web 框架。
 
 ### 章节状态总表 {#chapter-matrix}
@@ -169,7 +169,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 补充说明：
 
 - `P14` 章节除了 `p14-mcp.ts` 外，还需要仓库根目录的 `p14-mcp-server.ts` 配合运行。
-- 运行前仍建议先看 [实践环境准备](/practice/setup)，重点确认依赖和 `ANTHROPIC_API_KEY`。
+- 运行前仍建议先看 [实践环境准备](/practice/setup)，重点确认依赖和 `OPENAI_API_KEY`。
 
 <style scoped>
 .practice-hero-section {

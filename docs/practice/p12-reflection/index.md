@@ -8,7 +8,7 @@ description: 让 Agent 生成初稿后用评审者角色评估质量，根据反
   difficulty="intermediate"
   duration="45 min"
   :prerequisites="['P10']"
-  :tags="['Reflection', 'Self-Evaluation', 'TypeScript', 'Anthropic SDK']"
+  :tags="['Reflection', 'Self-Evaluation', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 让 Agent 生成初稿后用评审者角色评估质量，根据反
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P10`
 - 本章建议入口命令：`bun run p12-reflection.ts`
 - 示例文件位置：仓库根目录 `p12-reflection.ts`
@@ -123,9 +123,9 @@ Reflection 模式有两种实现方式：
 
 ```ts
 // p12-reflection.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 // 评审结果结构
 interface ReflectionResult {
@@ -155,7 +155,7 @@ function isReflectionResult(value: unknown): value is ReflectionResult {
 class Generator {
   private model: string
 
-  constructor(model = 'claude-opus-4-6') {
+  constructor(model = 'gpt-4o') {
     this.model = model
   }
 
@@ -176,7 +176,7 @@ ${previousFeedback.suggestions.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}
 请针对以上具体问题进行改进，同时保留上一版本做得好的部分。`
     }
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
       max_tokens: 1024,
       system: systemPrompt,
@@ -184,7 +184,7 @@ ${previousFeedback.suggestions.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}
     })
 
     return response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
       .map(b => b.text)
       .join('')
   }
@@ -197,7 +197,7 @@ ${previousFeedback.suggestions.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}
 class Critic {
   private model: string
 
-  constructor(model = 'claude-opus-4-6') {
+  constructor(model = 'gpt-4o') {
     this.model = model
   }
 
@@ -233,7 +233,7 @@ ${output}
 
 请严格按 JSON 格式输出评审结果。`
 
-    const response = await client.messages.create({
+    const response = await client.chat.completions.create({
       model: this.model,
       max_tokens: 512,
       system: systemPrompt,
@@ -241,7 +241,7 @@ ${output}
     })
 
     const responseText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
       .map(b => b.text)
       .join('')
       .trim()

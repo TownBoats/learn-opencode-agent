@@ -8,7 +8,7 @@ description: 实现 Reason-Act 循环，让 Agent 在每次行动前显式输出
   difficulty="intermediate"
   duration="60 min"
   :prerequisites="['P1', 'P4']"
-  :tags="['ReAct', 'Reasoning', 'Agent Loop', 'TypeScript', 'Anthropic SDK']"
+  :tags="['ReAct', 'Reasoning', 'Agent Loop', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 实现 Reason-Act 循环，让 Agent 在每次行动前显式输出
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`、`P4`
 - 本章建议入口命令：`bun run p10-react-loop.ts`
 - 示例文件位置：仓库根目录 `p10-react-loop.ts`
@@ -138,9 +138,9 @@ Action Input: {"city": "北京"}
 
 ```ts
 // p10-react-loop.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 const REACT_SYSTEM_PROMPT = `你是一个使用 ReAct（Reasoning and Acting）框架的 AI 助手。
 
@@ -312,20 +312,20 @@ class ReActAgent {
 
     // ReAct 使用纯文本对话，不使用 tools 参数
     // 工具调用通过文本格式约定，手动解析执行
-    const messages: Anthropic.MessageParam[] = [
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'user', content: userInput },
     ]
 
     for (let step = 0; step < this.maxSteps; step++) {
-      const response = await client.messages.create({
-        model: 'claude-opus-4-6',
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         max_tokens: 1024,
         system: systemPrompt,
         messages,
       })
 
       const responseText = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
         .map(b => b.text)
         .join('')
 

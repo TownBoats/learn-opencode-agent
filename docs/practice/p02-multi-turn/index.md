@@ -8,7 +8,7 @@ description: 构建有记忆的对话助手，掌握 messages 历史管理与 To
   difficulty="beginner"
   duration="30 min"
   :prerequisites="['P1']"
-  :tags="['Anthropic SDK', 'Context Management', 'TypeScript']"
+  :tags="['OpenAI SDK', 'Context Management', 'TypeScript']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 构建有记忆的对话助手，掌握 messages 历史管理与 To
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`
 - 本章建议入口命令：`bun run p02-multi-turn.ts`
 - 示例文件位置：仓库根目录 `p02-multi-turn.ts`
@@ -105,7 +105,7 @@ function estimateTokens(text: string): number {
 | Token 数量过大 | 延迟增加，成本线性上涨 |
 | 噪声历史混入 | 模型注意力分散，回复质量下降 |
 
-`claude-haiku-4-5` 的 context window 是 200K Token，但生产中一般把单次请求控制在 10-20K 以内，兼顾成本和响应速度。
+`gpt-4o-mini` 的 context window 是 200K Token，但生产中一般把单次请求控制在 10-20K 以内，兼顾成本和响应速度。
 
 ## 动手实现
 
@@ -124,9 +124,9 @@ function estimateTokens(text: string): number {
 
 ```ts
 // p02-multi-turn.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 // 每 4 个字符估算为 1 个 Token（粗略，够用于预算控制）
 function estimateTokens(text: string): number {
@@ -134,7 +134,7 @@ function estimateTokens(text: string): number {
 }
 
 // 把消息内容统一转为字符串用于估算
-function messageToText(message: Anthropic.MessageParam): string {
+function messageToText(message: OpenAI.ChatCompletionMessageParam): string {
   if (typeof message.content === 'string') {
     return message.content
   }
@@ -151,7 +151,7 @@ function messageToText(message: Anthropic.MessageParam): string {
 
 ```ts
 class ChatSession {
-  private messages: Anthropic.MessageParam[] = []
+  private messages: OpenAI.ChatCompletionMessageParam[] = []
   private systemPrompt: string
   private maxTokenEstimate: number
 
@@ -193,8 +193,8 @@ class ChatSession {
     // 发送前检查并裁剪历史
     this.trimHistory(this.maxTokenEstimate)
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 1024,
       system: this.systemPrompt,
       messages: this.messages,
@@ -202,7 +202,7 @@ class ChatSession {
 
     // 提取文本回复
     const assistantText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .filter((block): block is OpenAI.ChatCompletionMessage => block.type === 'text')
       .map(block => block.text)
       .join('')
 
@@ -302,7 +302,7 @@ test('average ignores undefined', () => {
 | Token 估算 | `字符数 / 4`，粗略但实用，避免调用额外 API |
 | 裁剪时机 | 发送请求前检查，超出预算则删除最旧的 user+assistant 对 |
 | 保留最后一轮 | `messages.length > 2` 作为裁剪终止条件，避免把刚追加的用户消息也删掉 |
-| `claude-haiku-4-5` | 速度最快、成本最低的 Claude 模型，适合多轮对话场景 |
+| `gpt-4o-mini` | 速度最快、成本最低的 Claude 模型，适合多轮对话场景 |
 
 ## 常见问题
 
@@ -312,7 +312,7 @@ test('average ignores undefined', () => {
 
 **Q: 超过 context window 会怎样？**
 
-Anthropic API 会返回 400 错误，错误信息类似 `prompt is too long: 210234 tokens > 200000 maximum`。对话直接中断。这就是为什么要在发送请求前主动裁剪，而不是等报错再处理。
+OpenAI API 会返回 400 错误，错误信息类似 `prompt is too long: 210234 tokens > 200000 maximum`。对话直接中断。这就是为什么要在发送请求前主动裁剪，而不是等报错再处理。
 
 **Q: system prompt 算 Token 吗？**
 

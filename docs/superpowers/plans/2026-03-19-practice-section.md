@@ -100,7 +100,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const LINES = [
   { text: '$ bun run p01-minimal-agent.ts', color: '#f97316' },
-  { text: '✓ Anthropic SDK initialized', color: '#86efac' },
+  { text: '✓ OpenAI SDK initialized', color: '#86efac' },
   { text: '✓ Tool registered: get_weather', color: '#86efac' },
   { text: 'Agent: 我需要查询北京的天气...', color: '#93c5fd' },
   { text: 'Tool call: get_weather({ city: "北京" })', color: '#d1d5db' },
@@ -950,7 +950,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 # AI Agent 实战手册
 
-**23 个项目 · 每章可运行 · Anthropic SDK + TypeScript**
+**23 个项目 · 每章可运行 · OpenAI SDK + TypeScript**
 
 <div class="practice-actions">
   <a href="/practice/p01-minimal-agent/" class="btn-primary">▶ bun run p01</a>
@@ -975,7 +975,7 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 ## 技术覆盖
 
 <PracticeTagCloud :tags="[
-  'Anthropic SDK', 'Tool Calling', 'Streaming', 'Multi-turn',
+  'OpenAI SDK', 'Tool Calling', 'Streaming', 'Multi-turn',
   'Memory System', 'RAG', 'GraphRAG', 'Hybrid Retrieval',
   'ReAct', 'Planning', 'Reflection', 'Multimodal',
   'MCP', 'Multi-Agent', 'Cost Control', 'Security',
@@ -1084,7 +1084,7 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
   difficulty="beginner"
   duration="45 min"
   :prerequisites="[]"
-  :tags="['Anthropic SDK', 'Tool Calling', 'TypeScript']"
+  :tags="['OpenAI SDK', 'Tool Calling', 'TypeScript']"
 />
 
 ## 背景与目标
@@ -1092,8 +1092,8 @@ description: 用 80 行 TypeScript 构建你的第一个可运行 Agent，理解
 大多数人第一次用 LLM API，都是这样写的：
 
 ```ts
-const response = await client.messages.create({
-  model: 'claude-opus-4-6',
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
   messages: [{ role: 'user', content: '北京今天天气怎么样？' }]
 })
 ```
@@ -1125,12 +1125,12 @@ const response = await client.messages.create({
 
 ```ts
 // p01-minimal-agent.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 // 工具声明：告诉模型这个工具做什么、需要什么参数
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
     name: 'get_weather',
     description: '查询指定城市的当前天气',
@@ -1166,13 +1166,13 @@ function get_weather(city: string): string {
 
 ```ts
 async function runAgent(userMessage: string) {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage }
   ]
 
   while (true) {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1024,
       tools,
       messages,
@@ -1194,7 +1194,7 @@ async function runAgent(userMessage: string) {
 
     if (response.stop_reason === 'tool_use') {
       // 模型要调用工具，逐个执行并收集结果
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
 
       for (const block of response.content) {
         if (block.type !== 'tool_use') continue

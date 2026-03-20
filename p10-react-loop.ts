@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 const REACT_SYSTEM_PROMPT = `你是一个使用 ReAct（Reasoning and Acting）框架的 AI 助手。
 
@@ -153,20 +153,18 @@ class ReActAgent {
     console.log(`用户: ${userInput}\n`)
 
     const systemPrompt = `${REACT_SYSTEM_PROMPT}\n\n${TOOLS_DESCRIPTION}`
-    const messages: Anthropic.MessageParam[] = [{ role: 'user', content: userInput }]
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userInput },
+    ]
 
     for (let step = 0; step < this.maxSteps; step += 1) {
-      const response = await client.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 1024,
-        system: systemPrompt,
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         messages,
       })
 
-      const responseText = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('')
+      const responseText = response.choices[0].message.content ?? ''
 
       const parsed = parseReActOutput(responseText)
 

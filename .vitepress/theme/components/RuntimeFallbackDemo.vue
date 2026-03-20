@@ -68,7 +68,7 @@ interface Model {
 }
 
 const models: Model[] = [
-  { name: 'claude-opus-4-6 max', provider: 'Anthropic' },
+  { name: 'gpt-4o max', provider: 'OpenAI' },
   { name: 'k2p5', provider: 'Kimi (月之暗面)' },
   { name: 'gpt-5.4 medium', provider: 'OpenAI' },
   { name: 'glm-5', provider: 'Zhipu AI' },
@@ -84,7 +84,7 @@ const done = ref(false)
 const statusText = computed(() => {
   if (done.value) return 'Kimi 接管任务，任务继续执行'
   if (successModel.value !== null) return '切换成功，继续执行'
-  if (failedModels.value.length > 0) return 'Anthropic API 限流，切换到下一个模型...'
+  if (failedModels.value.length > 0) return 'OpenAI API 限流，切换到下一个模型...'
   if (currentModel.value !== null) return '调用中...'
   return '等待开始...'
 })
@@ -98,12 +98,12 @@ async function run() {
   currentModel.value = 0
   await delay(700)
   visibleEvents.value = [...visibleEvents.value, {
-    kind: 'request', title: '调用 claude-opus-4-6', desc: 'POST api.anthropic.com/v1/messages'
+    kind: 'request', title: '调用 gpt-4o', desc: 'POST api.openai.com/v1/chat/completions'
   }]
 
   await delay(900)
   visibleEvents.value = [...visibleEvents.value, {
-    kind: 'error', title: '429 Too Many Requests', desc: 'Anthropic API 限流'
+    kind: 'error', title: '429 Too Many Requests', desc: 'OpenAI API 限流'
   }]
   failedModels.value = [0]
 

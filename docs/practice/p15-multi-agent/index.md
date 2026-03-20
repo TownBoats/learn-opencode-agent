@@ -8,7 +8,7 @@ description: Orchestrator-Worker 架构设计 — 一个编排器拆解任务，
   difficulty="advanced"
   duration="60 min"
   :prerequisites="['P1', 'P11']"
-  :tags="['Multi-Agent', 'Orchestrator', 'Parallel', 'TypeScript', 'Anthropic SDK']"
+  :tags="['Multi-Agent', 'Orchestrator', 'Parallel', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: Orchestrator-Worker 架构设计 — 一个编排器拆解任务，
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`、`P11`
 - 本章建议入口命令：`bun run p15-multi-agent.ts`
 - 示例文件位置：仓库根目录 `p15-multi-agent.ts`
@@ -121,9 +121,9 @@ interface DispatchInput {
 
 ```ts
 // p15-multi-agent.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const anthropic = new OpenAI()
 
 // 子任务描述（Orchestrator 输出）
 interface SubTask {
@@ -151,8 +151,8 @@ Worker 是一个纯函数：接收子任务描述，返回执行结果。每个 
 async function runWorker(task: SubTask): Promise<WorkerResult> {
   console.log(`[Worker:${task.id}] 开始执行: ${task.title}`)
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514', // 示例型号，实际项目请替换为当前可用模型 ID
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o', // 示例型号，实际项目请替换为当前可用模型 ID
     max_tokens: 2048,
     system: [
       `你是一位专注于「${task.expertise}」的专家。`,
@@ -165,7 +165,7 @@ async function runWorker(task: SubTask): Promise<WorkerResult> {
   })
 
   const output = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 
@@ -189,7 +189,7 @@ async function runWorker(task: SubTask): Promise<WorkerResult> {
 // p15-multi-agent.ts（续）
 
 // dispatch_workers 工具的 input schema
-const dispatchToolSchema: Anthropic.Tool = {
+const dispatchToolSchema: OpenAI.ChatCompletionTool = {
   name: 'dispatch_workers',
   description: '将任务分派给多个专家 Worker 并行执行。每个 Worker 独立工作，互不可见。执行完成后返回所有 Worker 的结果。',
   input_schema: {
@@ -258,7 +258,7 @@ Orchestrator 本身也是一个 Agent 循环：发送用户请求，模型决定
 async function orchestrate(userMessage: string): Promise<string> {
   console.log(`用户: ${userMessage}\n`)
 
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage },
   ]
 
@@ -282,8 +282,8 @@ async function orchestrate(userMessage: string): Promise<string> {
 
   // Orchestrator 的 Agent 循环
   while (true) {
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 4096,
       system: systemPrompt,
       tools: [dispatchToolSchema],
@@ -292,13 +292,13 @@ async function orchestrate(userMessage: string): Promise<string> {
 
     // 检查是否有工具调用
     const toolUseBlocks = response.content.filter(
-      (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+      (b): b is OpenAI.ChatCompletionToolUseBlock => b.type === 'tool_use'
     )
 
     if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
       // 模型完成了聚合，返回最终文本
       const finalText = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
         .map(b => b.text)
         .join('')
       return finalText
@@ -308,7 +308,7 @@ async function orchestrate(userMessage: string): Promise<string> {
     messages.push({ role: 'assistant', content: response.content })
 
     // 处理 dispatch_workers 工具调用
-    const toolResults: Anthropic.ToolResultBlockParam[] = []
+    const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
     for (const toolUse of toolUseBlocks) {
       if (toolUse.name === 'dispatch_workers') {
         const input = toolUse.input as { tasks: SubTask[] }
@@ -433,10 +433,10 @@ main().catch(console.error)
 async function runWorker(task: SubTask): Promise<WorkerResult> {
   // 根据任务类型选择模型
   const model = task.expertise.includes('代码')
-    ? 'claude-sonnet-4-20250514'   // 代码任务示例：用 Sonnet
-    : 'claude-haiku-4-5-20251001'  // 简单分析示例：用 Haiku
+    ? 'gpt-4o'   // 代码任务示例：用 Sonnet
+    : 'gpt-4o-mini'  // 简单分析示例：用 Haiku
 
-  const response = await anthropic.messages.create({
+  const response = await client.chat.completions.create({
     model,
     // ...
   })

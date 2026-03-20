@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { randomUUID } from 'node:crypto'
 
-const anthropic = new Anthropic()
+const client = new OpenAI()
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 type SpanStatus = 'ok' | 'error'
@@ -222,46 +222,45 @@ class MetricsCollector {
   }
 }
 
-const TOOLS: Anthropic.Tool[] = [
+const TOOLS: OpenAI.ChatCompletionTool[] = [
   {
-    name: 'search_docs',
-    description: '搜索知识库并返回相关资料。回答前必须先调用一次这个工具。',
-    input_schema: {
-      type: 'object',
-      properties: {
-        query: { type: 'string', description: '搜索关键词' },
+    type: 'function',
+    function: {
+      name: 'search_docs',
+      description: '搜索知识库并返回相关资料。回答前必须先调用一次这个工具。',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: '搜索关键词' },
+        },
+        required: ['query'],
       },
-      required: ['query'],
-    } as Anthropic.Tool.InputSchema,
+    },
   },
   {
-    name: 'summarize',
-    description: '把输入文本压缩成三点摘要。在搜索之后需要调用这个工具整理结果。',
-    input_schema: {
-      type: 'object',
-      properties: {
-        text: { type: 'string', description: '待总结文本' },
+    type: 'function',
+    function: {
+      name: 'summarize',
+      description: '把输入文本压缩成三点摘要。在搜索之后需要调用这个工具整理结果。',
+      parameters: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: '待总结文本' },
+        },
+        required: ['text'],
       },
-      required: ['text'],
-    } as Anthropic.Tool.InputSchema,
+    },
   },
 ]
 
 const KNOWLEDGE = [
-  'Logs 负责记录事件上下文，适合排查“发生了什么”。',
+  'Logs 负责记录事件上下文，适合排查"发生了什么"。',
   'Traces 负责还原一次请求的完整链路，适合定位性能瓶颈和错误传播路径。',
   'Metrics 负责做聚合统计，适合监控整体健康度和趋势。',
 ]
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function toText(content: Anthropic.ContentBlock[]): string {
-  return content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
 }
 
 async function executeTool(
@@ -303,24 +302,27 @@ async function runObservableAgent(userMessage: string): Promise<void> {
     prompt_length: userMessage.length,
   })
 
-  const messages: Anthropic.MessageParam[] = [{ role: 'user', content: userMessage }]
-  const systemPrompt = [
-    '你是一个讲解 Agent 可观测性的助手。',
-    '回答前必须先调用 search_docs 获取资料，再调用 summarize 生成三点摘要，最后再给用户一个简短结论。',
-  ].join('\n')
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
+    {
+      role: 'system',
+      content: [
+        '你是一个讲解 Agent 可观测性的助手。',
+        '回答前必须先调用 search_docs 获取资料，再调用 summarize 生成三点摘要，最后再给用户一个简短结论。',
+      ].join('\n'),
+    },
+    { role: 'user', content: userMessage },
+  ]
 
   for (let iteration = 1; iteration <= 6; iteration += 1) {
     const llmSpanId = tracer.startSpan('llm_call', {
       iteration,
-      model: 'claude-sonnet-4-20250514',
+      model: 'gpt-4o',
     })
     const llmStart = Date.now()
 
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: systemPrompt,
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         tools: TOOLS,
         messages,
       })
@@ -328,26 +330,25 @@ async function runObservableAgent(userMessage: string): Promise<void> {
       const latencyMs = Date.now() - llmStart
       metrics.recordLlmCall(
         latencyMs,
-        response.usage.input_tokens,
-        response.usage.output_tokens,
+        response.usage?.prompt_tokens ?? 0,
+        response.usage?.completion_tokens ?? 0,
       )
       logger.info('llm_call_completed', {
         span_id: llmSpanId,
         latency_ms: latencyMs,
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
+        input_tokens: response.usage?.prompt_tokens ?? 0,
+        output_tokens: response.usage?.completion_tokens ?? 0,
       })
       tracer.endSpan(llmSpanId, {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
+        input_tokens: response.usage?.prompt_tokens ?? 0,
+        output_tokens: response.usage?.completion_tokens ?? 0,
       })
 
-      const toolUses = response.content.filter(
-        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
-      )
+      const message = response.choices[0].message
+      const toolCalls = message.tool_calls ?? []
 
-      if (response.stop_reason === 'end_turn' || toolUses.length === 0) {
-        const answer = toText(response.content)
+      if (response.choices[0].finish_reason === 'stop' || toolCalls.length === 0) {
+        const answer = message.content ?? ''
         logger.info('agent_completed', {
           span_id: rootSpanId,
           output_length: answer.length,
@@ -361,64 +362,59 @@ async function runObservableAgent(userMessage: string): Promise<void> {
         return
       }
 
-      messages.push({ role: 'assistant', content: response.content })
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      messages.push(message)
 
-      for (const toolUse of toolUses) {
-        const input =
-          typeof toolUse.input === 'object' && toolUse.input !== null
-            ? (toolUse.input as Record<string, unknown>)
-            : {}
-        const toolSpanId = tracer.startSpan(`tool:${toolUse.name}`, {
-          tool_name: toolUse.name,
+      for (const toolCall of toolCalls) {
+        if (toolCall.type !== 'function') continue
+
+        const input = JSON.parse(toolCall.function.arguments) as Record<string, unknown>
+        const toolSpanId = tracer.startSpan(`tool:${toolCall.function.name}`, {
+          tool_name: toolCall.function.name,
         })
         const toolStart = Date.now()
 
         try {
-          const result = await executeTool(toolUse.name, input)
+          const result = await executeTool(toolCall.function.name, input)
           const duration = Date.now() - toolStart
-          metrics.recordToolCall(toolUse.name)
+          metrics.recordToolCall(toolCall.function.name)
           logger.info('tool_call_completed', {
             span_id: toolSpanId,
-            tool: toolUse.name,
+            tool: toolCall.function.name,
             duration_ms: duration,
           })
           tracer.endSpan(toolSpanId, { duration_ms: duration })
-          toolResults.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
             content: result,
           })
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
+          const errorMessage = error instanceof Error ? error.message : String(error)
           metrics.recordError()
           logger.error('tool_call_failed', {
             span_id: toolSpanId,
-            tool: toolUse.name,
-            error: message,
+            tool: toolCall.function.name,
+            error: errorMessage,
           })
-          tracer.setError(toolSpanId, message)
+          tracer.setError(toolSpanId, errorMessage)
           tracer.endSpan(toolSpanId)
-          toolResults.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: `工具执行失败: ${message}`,
-            is_error: true,
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: `工具执行失败: ${errorMessage}`,
           })
         }
       }
-
-      messages.push({ role: 'user', content: toolResults })
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
       metrics.recordError()
       logger.error('llm_call_failed', {
         span_id: llmSpanId,
-        error: message,
+        error: errorMessage,
       })
-      tracer.setError(llmSpanId, message)
+      tracer.setError(llmSpanId, errorMessage)
       tracer.endSpan(llmSpanId)
-      tracer.setError(rootSpanId, message)
+      tracer.setError(rootSpanId, errorMessage)
       tracer.endSpan(rootSpanId)
       throw error
     }

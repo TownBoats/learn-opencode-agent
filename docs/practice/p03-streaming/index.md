@@ -8,7 +8,7 @@ description: 用 stream() API 实现逐 token 打印，让 Agent 回复不再让
   difficulty="beginner"
   duration="30 min"
   :prerequisites="['P1']"
-  :tags="['Anthropic SDK', 'Streaming', 'TypeScript']"
+  :tags="['OpenAI SDK', 'Streaming', 'TypeScript']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 用 stream() API 实现逐 token 打印，让 Agent 回复不再让
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`
 - 本章建议入口命令：`bun run p03-streaming.ts`
 - 示例文件位置：仓库根目录 `p03-streaming.ts`
@@ -29,7 +29,7 @@ description: 用 stream() API 实现逐 token 打印，让 Agent 回复不再让
 P1 的 Agent 用的是标准的非流式调用：
 
 ```ts
-const response = await client.messages.create({ ... })
+const response = await client.chat.completions.create({ ... })
 // 5-10 秒后，所有内容一次性出现
 console.log(response.content)
 ```
@@ -53,11 +53,11 @@ console.log(response.content)
 
 ### stream() vs create()
 
-Anthropic SDK 提供两个入口，底层协议不同：
+OpenAI SDK 提供两个入口，底层协议不同：
 
 | 方法 | 返回 | 行为 |
 |------|------|------|
-| `client.messages.create()` | `Promise<Message>` | 等待全部生成完毕，一次性返回 |
+| `client.chat.completions.create()` | `Promise<Message>` | 等待全部生成完毕，一次性返回 |
 | `client.messages.stream()` | `MessageStream` | 返回 AsyncIterable，每个事件立刻推送 |
 
 `stream()` 在传输层用 HTTP 分块传输（chunked transfer），服务器边生成边写入响应流。
@@ -109,11 +109,11 @@ message_stop          -> 整条消息结束
 
 ```ts
 // p03-streaming.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
     name: 'get_weather',
     description: '查询指定城市的当前天气',
@@ -159,21 +159,21 @@ function executeTool(name: string, input: Record<string, string>): string {
 
 ```ts
 async function runStreamingAgent(userMessage: string): Promise<void> {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage },
   ]
 
   while (true) {
     // 启动流式请求
     const stream = client.messages.stream({
-      model: 'claude-opus-4-6',
+      model: 'gpt-4o',
       max_tokens: 1024,
       tools,
       messages,
     })
 
     // 收集本轮完整的 assistant content blocks（用于历史记录和工具调用检测）
-    const contentBlocks: Anthropic.ContentBlock[] = []
+    const contentBlocks: OpenAI.ChatCompletionContentPart[] = []
 
     // 当前正在构建的工具调用 block（参数 JSON 分多个 delta 推送）
     let currentToolUse: {
@@ -254,7 +254,7 @@ async function runStreamingAgent(userMessage: string): Promise<void> {
 
     if (stopReason === 'tool_use') {
       // 执行所有工具调用，收集结果
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
 
       for (const block of contentBlocks) {
         if (block.type !== 'tool_use') continue
@@ -317,7 +317,7 @@ runStreamingAgent('北京天气怎么样，适合跑步吗？').catch(console.er
 
 **Q: 如何在 Web 场景用 SSE 转发流式输出？**
 
-在 HTTP API 层，把 Anthropic SDK 的事件流转换成 [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)（SSE）格式推给前端：
+在 HTTP API 层，把 OpenAI SDK 的事件流转换成 [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)（SSE）格式推给前端：
 
 ```ts
 // Express 路由示例（伪代码）

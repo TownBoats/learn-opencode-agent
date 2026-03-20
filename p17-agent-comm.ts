@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const client = new OpenAI()
 
 interface BlackboardEntry {
   value: string
@@ -97,31 +97,32 @@ function parseSections(text: string): Record<string, string> {
 async function runResearcher(topic: string, board: Blackboard, bus: MessageBus): Promise<void> {
   console.log('\n[Researcher] 开始研究...')
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
-    system: [
-      '你是一位研究员，专门负责收集和整理信息。',
-      '针对给定主题，请提供：',
-      '1. 3-5 个核心要点（标记为 KEY_POINTS）',
-      '2. 相关的背景数据或事实（标记为 BACKGROUND）',
-      '3. 一段简短的摘要（标记为 SUMMARY）',
-      '',
-      '请用以下格式输出，每个部分用 === 分隔：',
-      '=== KEY_POINTS ===',
-      '（要点列表）',
-      '=== BACKGROUND ===',
-      '（背景信息）',
-      '=== SUMMARY ===',
-      '（摘要）',
-    ].join('\n'),
-    messages: [{ role: 'user', content: `请研究以下主题：${topic}` }],
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位研究员，专门负责收集和整理信息。',
+          '针对给定主题，请提供：',
+          '1. 3-5 个核心要点（标记为 KEY_POINTS）',
+          '2. 相关的背景数据或事实（标记为 BACKGROUND）',
+          '3. 一段简短的摘要（标记为 SUMMARY）',
+          '',
+          '请用以下格式输出，每个部分用 === 分隔：',
+          '=== KEY_POINTS ===',
+          '（要点列表）',
+          '=== BACKGROUND ===',
+          '（背景信息）',
+          '=== SUMMARY ===',
+          '（摘要）',
+        ].join('\n'),
+      },
+      { role: 'user', content: `请研究以下主题：${topic}` },
+    ],
   })
 
-  const text = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  const text = response.choices[0].message.content ?? ''
 
   const sections = parseSections(text)
   for (const [key, value] of Object.entries(sections)) {
@@ -143,18 +144,20 @@ async function runWriter(topic: string, board: Blackboard, bus: MessageBus): Pro
   console.log(`  [Writer] 收到 ${notifications.length} 条消息`)
 
   const research = readAllFromBlackboard(board)
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
-    system: [
-      '你是一位专业写手，擅长将研究资料转化为流畅、有说服力的文章。',
-      '根据提供的研究资料，撰写一篇 300-500 字的中文短文。',
-      '要求：',
-      '- 结构清晰：引言、正文（2-3 段）、结论',
-      '- 语言流畅自然，不要罗列要点',
-      '- 融合所有研究发现，不要遗漏关键信息',
-    ].join('\n'),
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
     messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位专业写手，擅长将研究资料转化为流畅、有说服力的文章。',
+          '根据提供的研究资料，撰写一篇 300-500 字的中文短文。',
+          '要求：',
+          '- 结构清晰：引言、正文（2-3 段）、结论',
+          '- 语言流畅自然，不要罗列要点',
+          '- 融合所有研究发现，不要遗漏关键信息',
+        ].join('\n'),
+      },
       {
         role: 'user',
         content: `主题：${topic}\n\n以下是研究团队的资料：\n\n${research}`,
@@ -162,10 +165,7 @@ async function runWriter(topic: string, board: Blackboard, bus: MessageBus): Pro
     ],
   })
 
-  const draft = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  const draft = response.choices[0].message.content ?? ''
 
   writeToBlackboard(board, 'DRAFT', draft, 'writer')
   sendMessage(bus, 'writer', 'editor', '初稿已完成并写入黑板 DRAFT，请审阅润色。')
@@ -208,25 +208,26 @@ async function runEditor(handoff: HandoffPayload): Promise<string> {
   console.log(`  [Editor] 任务: ${handoff.task}`)
   console.log(`  [Editor] 约束: ${handoff.constraints.length} 条`)
 
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
-    system: [
-      '你是一位资深编辑，负责文章的最终润色和定稿。',
-      '',
-      '你的任务：',
-      handoff.task,
-      '',
-      '约束条件：',
-      ...handoff.constraints.map((constraint) => `- ${constraint}`),
-    ].join('\n'),
-    messages: [{ role: 'user', content: handoff.context }],
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content: [
+          '你是一位资深编辑，负责文章的最终润色和定稿。',
+          '',
+          '你的任务：',
+          handoff.task,
+          '',
+          '约束条件：',
+          ...handoff.constraints.map((constraint) => `- ${constraint}`),
+        ].join('\n'),
+      },
+      { role: 'user', content: handoff.context },
+    ],
   })
 
-  return response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
+  return response.choices[0].message.content ?? ''
 }
 
 async function main(): Promise<void> {

@@ -181,7 +181,7 @@ claude-opus-4-6 max
   → big-pickle
 ```
 
-当 Anthropic API 不可用时，Sisyphus 会自动降级到 Kimi，再到 GPT，保证系统在任何 Provider 故障时都能继续工作。
+当主模型 API 不可用时，Sisyphus 会自动降级到 Kimi，再到 GPT，保证系统在任何 Provider 故障时都能继续工作。
 
 ---
 

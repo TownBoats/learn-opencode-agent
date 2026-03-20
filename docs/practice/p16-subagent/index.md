@@ -8,7 +8,7 @@ description: 将 Worker 升级为拥有独立工具和多轮循环的子 Agent�
   difficulty="advanced"
   duration="60 min"
   :prerequisites="['P1', 'P15']"
-  :tags="['Sub-Agent', 'Task Decomposition', 'Tool Loop', 'TypeScript', 'Anthropic SDK']"
+  :tags="['Sub-Agent', 'Task Decomposition', 'Tool Loop', 'TypeScript', 'OpenAI SDK']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 将 Worker 升级为拥有独立工具和多轮循环的子 Agent�
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`、`P15`
 - 本章建议入口命令：`bun run p16-subagent.ts`
 - 示例文件位置：仓库根目录 `p16-subagent.ts`
@@ -107,14 +107,14 @@ const TIMEOUT_MS = 30_000  // 防止单个子 Agent 卡住整个系统
 
 ```ts
 // p16-subagent.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const anthropic = new OpenAI()
 
 // ========== 类型定义 ==========
 
 interface ToolDefinition {
-  schema: Anthropic.Tool
+  schema: OpenAI.ChatCompletionTool
   execute: (input: Record<string, string>) => Promise<string>
 }
 
@@ -237,7 +237,7 @@ const analyzeCodeTool: ToolDefinition = {
 
 class SubAgent {
   private config: SubAgentConfig
-  private messages: Anthropic.MessageParam[] = []
+  private messages: OpenAI.ChatCompletionMessageParam[] = []
   private callLog: string[] = []
 
   constructor(config: SubAgentConfig) {
@@ -254,8 +254,8 @@ class SubAgent {
     while (iterations < this.config.maxIterations) {
       iterations++
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+      const response = await client.chat.completions.create({
+        model: 'gpt-4o',
         max_tokens: 2048,
         system: this.config.systemPrompt,
         tools: toolSchemas,
@@ -264,13 +264,13 @@ class SubAgent {
 
       // 提取工具调用
       const toolUseBlocks = response.content.filter(
-        (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+        (b): b is OpenAI.ChatCompletionToolUseBlock => b.type === 'tool_use'
       )
 
       // 没有工具调用 → Agent 认为任务完成
       if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
         const finalText = response.content
-          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+          .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
           .map(b => b.text)
           .join('')
 
@@ -286,7 +286,7 @@ class SubAgent {
       // 执行每个工具调用
       this.messages.push({ role: 'assistant', content: response.content })
 
-      const toolResults: Anthropic.ToolResultBlockParam[] = []
+      const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
       for (const toolUse of toolUseBlocks) {
         const toolDef = this.config.tools.find(t => t.schema.name === toolUse.name)
         if (!toolDef) {
@@ -321,8 +321,8 @@ class SubAgent {
       .pop()
 
     const partialOutput = lastAssistant
-      ? (lastAssistant.content as Anthropic.ContentBlock[])
-          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      ? (lastAssistant.content as OpenAI.ChatCompletionContentPart[])
+          .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
           .map(b => b.text)
           .join('')
       : '（子 Agent 未能在限定轮次内完成任务）'
@@ -395,8 +395,8 @@ async function orchestrate(userMessage: string): Promise<string> {
   console.log(`用户: ${userMessage}\n`)
 
   // 第一阶段：让 Orchestrator 拆解任务
-  const planResponse = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
+  const planResponse = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 2048,
     system: [
       '你是一个任务编排器。分析用户请求，将其拆解为子任务列表。',
@@ -409,7 +409,7 @@ async function orchestrate(userMessage: string): Promise<string> {
   })
 
   const planText = planResponse.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 
@@ -465,8 +465,8 @@ async function orchestrate(userMessage: string): Promise<string> {
     ? `\n\n### 失败的子任务\n${failures.map(f => `- ${f.taskId}: ${f.error}`).join('\n')}`
     : ''
 
-  const synthesisResponse = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
+  const synthesisResponse = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 4096,
     system: '你是一个报告聚合专家。将多个子 Agent 的输出整合为一份结构清晰的综合报告。提炼核心发现，去除重复，解决冲突。',
     messages: [{
@@ -476,7 +476,7 @@ async function orchestrate(userMessage: string): Promise<string> {
   })
 
   return synthesisResponse.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
     .map(b => b.text)
     .join('')
 }

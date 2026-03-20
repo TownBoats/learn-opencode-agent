@@ -8,7 +8,7 @@ description: 指数退避、工具调用失败降级、让 Agent 在不稳定环
   difficulty="intermediate"
   duration="45 min"
   :prerequisites="['P1', 'P2']"
-  :tags="['Error Handling', 'Retry', 'Anthropic SDK', 'TypeScript']"
+  :tags="['Error Handling', 'Retry', 'OpenAI SDK', 'TypeScript']"
 />
 
 > 开始前先看：[实践环境准备](/practice/setup)。本章对应示例文件已提供在仓库根目录，可直接按命令运行。
@@ -18,8 +18,8 @@ description: 指数退避、工具调用失败降级、让 Agent 在不稳定环
 开始本章前，请先确认：
 
 - 已阅读 [实践环境准备](/practice/setup)
-- 基础依赖已就绪：`@anthropic-ai/sdk`
-- 环境变量已配置：`ANTHROPIC_API_KEY`
+- 基础依赖已就绪：`openai`
+- 环境变量已配置：`OPENAI_API_KEY`
 - 建议先完成前置章节：`P1`、`P2`
 - 本章建议入口命令：`bun run p04-error-handling.ts`
 - 示例文件位置：仓库根目录 `p04-error-handling.ts`
@@ -29,8 +29,8 @@ description: 指数退避、工具调用失败降级、让 Agent 在不稳定环
 把 P1 的最小 Agent 部署到生产环境，第一周就会遇到这些问题：
 
 ```
-AnthropicError: 429 rate_limit_error - Too many requests
-AnthropicError: 529 overloaded_error - Service temporarily overloaded
+OpenAI.APIError: 429 rate_limit_error - Too many requests
+OpenAI.APIError: 529 overloaded_error - Service temporarily overloaded
 Error: Tool execution failed: Network timeout after 30s
 Agent ran 47 iterations and never stopped
 ```
@@ -53,7 +53,7 @@ Agent 在运行时面临的错误可以分为三类：
 
 **第一类：API 错误**
 
-Anthropic SDK 抛出 `APIError`，通过 `status` 字段区分：
+OpenAI SDK 抛出 `APIError`，通过 `status` 字段区分：
 
 | 状态码 | 错误类型 | 是否可重试 | 处理方式 |
 |--------|----------|------------|----------|
@@ -109,9 +109,9 @@ delay = baseDelay * 2^attempt + random(0, jitter)
 
 ```ts
 // p04-error-handling.ts
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const client = new Anthropic()
+const client = new OpenAI()
 
 // 重试配置
 const RETRY_CONFIG = {
@@ -147,8 +147,8 @@ async function withRetry<T>(
     } catch (err) {
       lastError = err
 
-      // 只有 Anthropic API 错误才考虑重试
-      if (!(err instanceof Anthropic.APIError)) {
+      // 只有 OpenAI API 错误才考虑重试
+      if (!(err instanceof OpenAI.APIError)) {
         throw err
       }
 
@@ -183,7 +183,7 @@ async function withRetry<T>(
 
 关键设计决策：
 
-- `!(err instanceof Anthropic.APIError)` — 非 API 错误（如网络断连、本地代码异常）直接抛出，不重试
+- `!(err instanceof OpenAI.APIError)` — 非 API 错误（如网络断连、本地代码异常）直接抛出，不重试
 - `!RETRYABLE_STATUS.has(err.status)` — 400/401 这类客户端错误不重试，重试也没用
 - `Math.min(..., maxDelay)` — 防止退避时间无限增长
 
@@ -209,7 +209,7 @@ function query_database(table: string, id: number): string {
 }
 
 // 工具声明
-const tools: Anthropic.Tool[] = [
+const tools: OpenAI.ChatCompletionTool[] = [
   {
     name: 'query_database',
     description: '查询数据库中的记录。table 支持 users 和 orders，id 为记录编号',
@@ -237,7 +237,7 @@ const tools: Anthropic.Tool[] = [
 type ToolInput = { table: string; id: number }
 
 async function runAgent(userMessage: string): Promise<void> {
-  const messages: Anthropic.MessageParam[] = [
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'user', content: userMessage },
   ]
 
@@ -249,8 +249,8 @@ async function runAgent(userMessage: string): Promise<void> {
 
     // 调用 API，带重试保护
     const response = await withRetry(() =>
-      client.messages.create({
-        model: 'claude-opus-4-6',
+      client.chat.completions.create({
+        model: 'gpt-4o',
         max_tokens: 1024,
         tools,
         messages,
@@ -261,7 +261,7 @@ async function runAgent(userMessage: string): Promise<void> {
 
     if (response.stop_reason === 'end_turn') {
       const text = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .filter((b): b is OpenAI.ChatCompletionMessage => b.type === 'text')
         .map(b => b.text)
         .join('')
       console.log('\nAgent:', text)
@@ -274,7 +274,7 @@ async function runAgent(userMessage: string): Promise<void> {
     }
 
     // 执行工具，捕获所有错误
-    const toolResults: Anthropic.ToolResultBlockParam[] = []
+    const toolResults: OpenAI.ChatCompletionToolResultBlockParam[] = []
 
     for (const block of response.content) {
       if (block.type !== 'tool_use') continue
@@ -355,7 +355,7 @@ Agent: 用户 ID 1 的信息：Alice（alice@example.com）。
 
 | 概念 | 说明 |
 |------|------|
-| `instanceof Anthropic.APIError` | SDK 统一的错误基类，通过 `status` 和 `error.type` 区分错误种类 |
+| `instanceof OpenAI.APIError` | SDK 统一的错误基类，通过 `status` 和 `error.type` 区分错误种类 |
 | 可重试状态码 | 429 (rate_limit)、529 (overloaded)、500 (server error)；400/401 立即抛出 |
 | 指数退避 | `baseDelay * 2^attempt + jitter`，防止集中重试打垮服务器 |
 | 工具错误降级 | `try/catch` 包裹工具调用，catch 时构造 `tool_result` 而非抛出异常 |
@@ -374,7 +374,7 @@ Agent: 用户 ID 1 的信息：Alice（alice@example.com）。
 
 **Q: 如何区分"模型在思考"和"Agent 卡死了"？**
 
-两种判断维度：一是**时间维度**，给每次 API 调用设置超时（Anthropic SDK 支持 `timeout` 选项）；二是**轮次维度**，即本章实现的 `maxIterations`。正常的 Agent 很少需要超过 10 轮工具调用——如果超过，大概率是循环或参数错误。生产环境可以在循环里同时记录日志，方便事后分析是哪一轮开始异常。
+两种判断维度：一是**时间维度**，给每次 API 调用设置超时（OpenAI SDK 支持 `timeout` 选项）；二是**轮次维度**，即本章实现的 `maxIterations`。正常的 Agent 很少需要超过 10 轮工具调用——如果超过，大概率是循环或参数错误。生产环境可以在循环里同时记录日志，方便事后分析是哪一轮开始异常。
 
 ## 小结与延伸
 

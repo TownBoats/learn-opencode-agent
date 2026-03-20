@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic()
+const client = new OpenAI()
 
-type ModelTier = 'haiku' | 'sonnet' | 'opus'
+type ModelTier = 'mini' | 'standard' | 'large'
 type Complexity = 'simple' | 'medium' | 'complex'
 
 interface ModelConfig {
@@ -23,25 +23,25 @@ interface UsageRecord {
 }
 
 const MODELS: Record<ModelTier, ModelConfig> = {
-  haiku: {
-    id: 'claude-haiku-4-5-20251001',
-    tier: 'haiku',
-    inputPricePerMTok: 0.8,
-    outputPricePerMTok: 4.0,
+  mini: {
+    id: 'gpt-4o-mini',
+    tier: 'mini',
+    inputPricePerMTok: 0.15,
+    outputPricePerMTok: 0.6,
     maxTokens: 1024,
   },
-  sonnet: {
-    id: 'claude-sonnet-4-20250514',
-    tier: 'sonnet',
-    inputPricePerMTok: 3.0,
-    outputPricePerMTok: 15.0,
+  standard: {
+    id: 'gpt-4o',
+    tier: 'standard',
+    inputPricePerMTok: 2.5,
+    outputPricePerMTok: 10.0,
     maxTokens: 2048,
   },
-  opus: {
-    id: 'claude-opus-4-6',
-    tier: 'opus',
-    inputPricePerMTok: 15.0,
-    outputPricePerMTok: 75.0,
+  large: {
+    id: 'gpt-4o',
+    tier: 'large',
+    inputPricePerMTok: 2.5,
+    outputPricePerMTok: 10.0,
     maxTokens: 4096,
   },
 }
@@ -180,15 +180,15 @@ class BudgetTracker {
 }
 
 const COMPLEXITY_TO_TIER: Record<Complexity, ModelTier> = {
-  simple: 'haiku',
-  medium: 'sonnet',
-  complex: 'opus',
+  simple: 'mini',
+  medium: 'standard',
+  complex: 'large',
 }
 
 const FALLBACK_CHAINS: Record<ModelTier, ModelTier[]> = {
-  opus: ['opus', 'sonnet', 'haiku'],
-  sonnet: ['sonnet', 'haiku'],
-  haiku: ['haiku'],
+  large: ['large', 'standard', 'mini'],
+  standard: ['standard', 'mini'],
+  mini: ['mini'],
 }
 
 class ModelRouter {
@@ -208,11 +208,11 @@ class ModelRouter {
     const ratio = total > 0 ? remaining / total : 1
 
     if (ratio < 0.2) {
-      console.log('[Router] 预算不足 20%，强制使用 Haiku')
+      console.log('[Router] 预算不足 20%，强制使用 Mini')
       return {
-        config: MODELS.haiku,
+        config: MODELS.mini,
         complexity: 'simple',
-        fallbackChain: ['haiku'],
+        fallbackChain: ['mini'],
       }
     }
 
@@ -229,10 +229,9 @@ class ModelRouter {
 
   async callWithFallback(
     fallbackChain: ModelTier[],
-    messages: Anthropic.MessageParam[],
-    system: string,
-    tools?: Anthropic.Tool[],
-  ): Promise<{ response: Anthropic.Message; usedConfig: ModelConfig }> {
+    messages: OpenAI.ChatCompletionMessageParam[],
+    tools?: OpenAI.ChatCompletionTool[],
+  ): Promise<{ response: OpenAI.ChatCompletion; usedConfig: ModelConfig }> {
     let lastError: Error | null = null
 
     for (const tier of fallbackChain) {
@@ -240,18 +239,17 @@ class ModelRouter {
 
       try {
         console.log(`[Router] 尝试 ${config.id}...`)
-        const response = await anthropic.messages.create({
+        const response = await client.chat.completions.create({
           model: config.id,
           max_tokens: config.maxTokens,
-          system,
           messages,
           ...(tools && tools.length > 0 ? { tools } : {}),
         })
 
         const usage = this.budget.record(
           config,
-          response.usage.input_tokens,
-          response.usage.output_tokens,
+          response.usage?.prompt_tokens ?? 0,
+          response.usage?.completion_tokens ?? 0,
         )
         console.log(
           `[Router] ${config.tier} 完成: ${usage.inputTokens} in / ${usage.outputTokens} out, $${usage.costUsd.toFixed(6)}`,
@@ -278,18 +276,21 @@ class ModelRouter {
   }
 }
 
-const calculatorTool: Anthropic.Tool = {
-  name: 'calculator',
-  description: '执行数学计算',
-  input_schema: {
-    type: 'object',
-    properties: {
-      expression: {
-        type: 'string',
-        description: '数学表达式，如 "2 + 3 * 4"',
+const calculatorTool: OpenAI.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'calculator',
+    description: '执行数学计算',
+    parameters: {
+      type: 'object',
+      properties: {
+        expression: {
+          type: 'string',
+          description: '数学表达式，如 "2 + 3 * 4"',
+        },
       },
+      required: ['expression'],
     },
-    required: ['expression'],
   },
 }
 
@@ -310,7 +311,7 @@ function executeCalculator(expression: string): string {
 async function costAwareAgentLoop(userMessages: string[]): Promise<void> {
   const budget = new BudgetTracker(0.01)
   const router = new ModelRouter(budget)
-  const tools: Anthropic.Tool[] = [calculatorTool]
+  const tools: OpenAI.ChatCompletionTool[] = [calculatorTool]
 
   const systemPrompt = [
     '你是一个成本感知的 AI 助手。',
@@ -329,57 +330,47 @@ async function costAwareAgentLoop(userMessages: string[]): Promise<void> {
       break
     }
 
-    const messages: Anthropic.MessageParam[] = [{ role: 'user', content: userMsg }]
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMsg },
+    ]
     const { fallbackChain } = router.selectModel(userMsg, tools.length, turn)
 
     let done = false
     while (!done) {
-      const { response, usedConfig } = await router.callWithFallback(
-        fallbackChain,
-        messages,
-        systemPrompt,
-        tools,
-      )
+      const { response, usedConfig } = await router.callWithFallback(fallbackChain, messages, tools)
 
-      const toolUseBlocks = response.content.filter(
-        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
-      )
+      const message = response.choices[0].message
+      const toolCalls = message.tool_calls ?? []
 
-      if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
-        const text = response.content
-          .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-          .map((block) => block.text)
-          .join('')
-        console.log(`\n助手 [${usedConfig.tier}]: ${text}`)
+      if (response.choices[0].finish_reason === 'stop' || toolCalls.length === 0) {
+        console.log(`\n助手 [${usedConfig.tier}]: ${message.content ?? ''}`)
         done = true
       } else {
-        messages.push({ role: 'assistant', content: response.content })
+        messages.push(message)
 
-        const toolResults: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map((toolUse) => {
-          if (toolUse.name === 'calculator') {
-            const input =
-              typeof toolUse.input === 'object' && toolUse.input !== null
-                ? (toolUse.input as { expression: string })
-                : { expression: '' }
+        for (const toolCall of toolCalls) {
+          if (toolCall.type !== 'function') continue
 
-            const result = executeCalculator(input.expression)
-            console.log(`[Tool] calculator("${input.expression}") = ${result}`)
-
-            return {
-              type: 'tool_result' as const,
-              tool_use_id: toolUse.id,
-              content: result,
-            }
+          if (toolCall.function.name !== 'calculator') {
+            messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: `未知工具: ${toolCall.function.name}`,
+            })
+            continue
           }
 
-          return {
-            type: 'tool_result' as const,
-            tool_use_id: toolUse.id,
-            content: `未知工具: ${toolUse.name}`,
-          }
-        })
+          const input = JSON.parse(toolCall.function.arguments) as { expression: string }
+          const result = executeCalculator(input.expression)
+          console.log(`[Tool] calculator("${input.expression}") = ${result}`)
 
-        messages.push({ role: 'user', content: toolResults })
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: result,
+          })
+        }
       }
     }
   }
@@ -390,8 +381,8 @@ async function costAwareAgentLoop(userMessages: string[]): Promise<void> {
 async function main(): Promise<void> {
   const questions = [
     '今天是星期几？',
-    '帮我计算一下，如果每月 API 花费 $150，其中 60% 是简单查询，把简单查询从 Sonnet 切到 Haiku 后每月能省多少钱？假设 Haiku 价格是 Sonnet 的 1/4。',
-    '请深入分析 Anthropic Haiku、Sonnet、Opus 三个模型在 Agent 场景下的性能与成本权衡，从推理能力、响应延迟、工具调用准确性三个维度进行比较。',
+    '帮我计算一下，如果每月 API 花费 $150，其中 60% 是简单查询，把简单查询从 Standard 切到 Mini 后每月能省多少钱？假设 Mini 价格是 Standard 的 1/4。',
+    '请深入分析 OpenAI GPT-4o-mini、GPT-4o 两个模型在 Agent 场景下的性能与成本权衡，从推理能力、响应延迟、工具调用准确性三个维度进行比较。',
   ]
 
   await costAwareAgentLoop(questions)
