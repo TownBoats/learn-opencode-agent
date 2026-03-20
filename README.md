@@ -92,7 +92,18 @@
 │   ├── 18-hooks-architecture/
 │   ├── 19-tool-extension/
 │   ├── oh-flow/
-│   └── 20-best-practices/
+│   ├── 20-best-practices/
+│   └── intermediate/              # 中级篇（25-32章）
+│       ├── index.md
+│       ├── 25-rag-failure-patterns/
+│       ├── 26-multi-agent-collaboration/
+│       ├── 27-planning-mechanism/
+│       ├── 28-context-engineering/
+│       ├── 29-system-prompt-design/
+│       ├── 30-production-architecture/
+│       ├── 31-safety-boundaries/
+│       ├── 32-performance-cost/
+│       └── examples/              # 教学示例占位目录
 ├── add-frontmatter.ts          # 辅助脚本：批量补充 frontmatter
 ├── remove-duplicate-titles.ts  # 辅助脚本：移除重复 H1
 ├── Caddyfile                   # 生产静态服务配置
@@ -146,13 +157,25 @@
 | 第23章：一条消息的完整旅程 | `oh-flow/` |
 | 第24章：实战案例与最佳实践 | `20-best-practices/` |
 
+### 第六部分：中级篇
+| 章节 | 目录 |
+|------|------|
+| 第25章：RAG 为什么总是答不准？ | `intermediate/25-rag-failure-patterns/` |
+| 第26章：多 Agent 协作 | `intermediate/26-multi-agent-collaboration/` |
+| 第27章：规划机制 | `intermediate/27-planning-mechanism/` |
+| 第28章：上下文工程 | `intermediate/28-context-engineering/` |
+| 第29章：System Prompt 设计 | `intermediate/29-system-prompt-design/` |
+| 第30章：生产架构与部署 | `intermediate/30-production-architecture/` |
+| 第31章：安全边界与高风险控制 | `intermediate/31-safety-boundaries/` |
+| 第32章：性能与成本控制 | `intermediate/32-performance-cost/` |
+
 ## 本地开发
 
 ```bash
-pnpm install
-pnpm dev      # 启动开发服务器（默认端口 5173）
-pnpm build    # 构建静态产物到 .vitepress/dist/
-pnpm preview  # 预览构建结果
+bun install
+bun dev      # 启动开发服务器（默认端口 5173）
+bun build    # 构建静态产物到 .vitepress/dist/
+bun preview  # 预览构建结果
 ```
 
 如果你只想阅读站点，到这里就够了。
