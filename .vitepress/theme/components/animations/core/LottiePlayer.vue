@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import lottie, { type AnimationItem } from 'lottie-web'
-import type { LottiePlayerProps } from '../types'
+import type { LottiePlayerProps } from '../../types'
 
 const props = withDefaults(defineProps<LottiePlayerProps>(), {
   autoplay: false,

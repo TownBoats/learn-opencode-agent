@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useIntersectionObserver } from './useIntersectionObserver'
-import type { AnimationContainerProps } from '../types'
+import type { AnimationContainerProps } from '../../types'
 
 const props = withDefaults(defineProps<AnimationContainerProps>(), {
   title: '',
