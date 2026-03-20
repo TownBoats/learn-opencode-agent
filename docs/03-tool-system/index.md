@@ -44,6 +44,10 @@ description 字段比 execute 逻辑更重要。LLM 根据工具的 description 
 
 工具（Tool）是 Agent 与外部世界的全部接口。理解工具系统，就是理解 Agent 能做什么、被允许做什么、以及做完之后结果怎么传回 LLM。
 
+## 工具调用完整流程
+
+<FunctionCallingCss />
+
 ---
 
 ## 4.1 工具的数据结构
