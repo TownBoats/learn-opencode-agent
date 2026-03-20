@@ -24,6 +24,11 @@ import PracticeTagCloud from './components/PracticeTagCloud.vue'
 import ProjectCard from './components/ProjectCard.vue'
 import RunCommand from './components/RunCommand.vue'
 import PracticePreview from './components/PracticePreview.vue'
+import WhatIsAgent from './components/animations/css/WhatIsAgent.vue'
+import MultiTurnDialog from './components/animations/css/MultiTurnDialog.vue'
+import FunctionCalling from './components/animations/lottie/FunctionCalling.vue'
+import MultiAgentCollab from './components/animations/lottie/MultiAgentCollab.vue'
+import MemorySystem from './components/animations/lottie/MemorySystem.vue'
 import './custom.css'
 
 export default {
@@ -52,5 +57,10 @@ export default {
     app.component('ProjectCard', ProjectCard)
     app.component('RunCommand', RunCommand)
     app.component('PracticePreview', PracticePreview)
+    app.component('WhatIsAgent', WhatIsAgent)
+    app.component('MultiTurnDialog', MultiTurnDialog)
+    app.component('FunctionCalling', FunctionCalling)
+    app.component('MultiAgentCollab', MultiAgentCollab)
+    app.component('MemorySystem', MemorySystem)
   }
 } satisfies Theme
