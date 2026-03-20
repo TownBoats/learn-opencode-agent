@@ -2,6 +2,7 @@
 
 ## 变更记录 (Changelog)
 
+- **2026-03-20 14:30:00** - 新增动画系统：5 个核心概念动画组件（2个 CSS + 3个 Lottie），包含滚动触发基础设施
 - **2026-03-20 10:00:00** - 补充实践篇完整结构：23 个实践章节（P1-P23）、7 个阶段、3 个实践篇专属组件
 - **2026-03-19 16:12:00** - 全量重扫：补全第五部分章节、oh-* 特殊页面、21 个 Vue 组件完整清单、types.ts 类型接口、custom.css 设计系统
 - **初始版** - 初始手写文档，覆盖 00-15 章节与 4 个 Vue 组件
@@ -306,6 +307,16 @@ docs/book/
 | `RunCommand` | `components/RunCommand.vue` | 运行命令展示（含已验证标识） |
 | `PracticePreview` | `components/PracticePreview.vue` | 实践篇预览（首页引用） |
 
+### 动画演示组件
+
+| 组件名 | 文件 | 对应章节 |
+|--------|------|----------|
+| `WhatIsAgent` | `components/animations/css/WhatIsAgent.vue` | 第1-2章（LLM → Agent 演进） |
+| `MultiTurnDialog` | `components/animations/css/MultiTurnDialog.vue` | 第5章（多轮对话上下文） |
+| `FunctionCalling` | `components/animations/lottie/FunctionCalling.vue` | 第4章（工具调用流程） |
+| `MultiAgentCollab` | `components/animations/lottie/MultiAgentCollab.vue` | 第16章（多 Agent 协作） |
+| `MemorySystem` | `components/animations/lottie/MemorySystem.vue` | 第5章（记忆系统） |
+
 ### 类型定义
 
 所有组件 Props 类型集中定义在 `.vitepress/theme/components/types.ts`：
@@ -314,6 +325,7 @@ docs/book/
 - `RuntimeLifecycleStep` / `RuntimeLifecycleDiagramProps`
 - `TechItem` / `TechGroup`
 - `LearningPathChapter` / `LearningPhase`
+- `AnimationContainerProps` / `LottiePlayerProps` / `AnimationStage` / `UseIntersectionObserverOptions`
 
 ---
 
@@ -379,6 +391,9 @@ docs/book/
     "typescript": "^5.8.2",
     "vitepress": "^1.5.0",
     "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "dependencies": {
+    "lottie-web": "^5.13.0"
   }
 }
 ```
