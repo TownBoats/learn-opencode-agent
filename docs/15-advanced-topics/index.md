@@ -262,7 +262,11 @@ OpenCode 当前还有一条很值得学的经验：
 
 ---
 
-## 16.3 多 Agent 协作靠角色和协议，不靠幻想中的“智能分工”
+## 16.3 多 Agent 协作靠角色和协议，不靠幻想中的”智能分工”
+
+### 多 Agent 协作流程演示
+
+<MultiAgentCollab />
 
 ### `general` 和 `explore` 这类 `Subagent` 已经体现出真实协作分层
 
