@@ -71,7 +71,7 @@ import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifec
   15 高级主题与最佳实践
 ```
 
-## 三条阅读路线
+## 多条阅读路线
 
 ### 路线 A：从零入门 Agent 实现
 
@@ -160,7 +160,7 @@ import RuntimeLifecycleDiagram from '../.vitepress/theme/components/RuntimeLifec
 建议顺序：
 
 1. 衔接理论篇：重温第1-4章的运行时主链路和关键组件，把握系统整体脉络
-2. 进入中级篇：从 `/docs/intermediate/` 目录的内容开始，快速对照原理与中级工程专题之间的映射
+2. 进入中级篇：点击 [阅读中级篇入口](/intermediate/)，在中级专题内容里快速对照原理与工程场景的映射
 3. 对照实践篇：以 HTTP API、部署、质量等实践项目为锚点，在实际案例中验证中级专题的工程细节
 
 衔接说明：
