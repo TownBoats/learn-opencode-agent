@@ -29,6 +29,7 @@ import MultiTurnDialog from './components/animations/css/MultiTurnDialog.vue'
 import FunctionCalling from './components/animations/lottie/FunctionCalling.vue'
 import MultiAgentCollab from './components/animations/lottie/MultiAgentCollab.vue'
 import MemorySystem from './components/animations/lottie/MemorySystem.vue'
+import MemorySystemCss from './components/animations/css/MemorySystemCss.vue'
 import './custom.css'
 
 export default {
@@ -62,5 +63,6 @@ export default {
     app.component('FunctionCalling', FunctionCalling)
     app.component('MultiAgentCollab', MultiAgentCollab)
     app.component('MemorySystem', MemorySystem)
+    app.component('MemorySystemCss', MemorySystemCss)
   }
 } satisfies Theme

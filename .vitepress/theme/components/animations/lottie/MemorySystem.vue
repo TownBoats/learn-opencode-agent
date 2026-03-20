@@ -5,7 +5,8 @@
         ref="playerRef"
         :animation-data="animationData"
         :autoplay="isVisible"
-        :loop="false"
+        :loop="true"
+        :speed="1.2"
         @complete="handleComplete"
       />
     </template>
