@@ -16,6 +16,9 @@ hero:
       text: 阅读地图
       link: /reading-map
     - theme: alt
+      text: 阅读中级篇
+      link: /intermediate/
+    - theme: alt
       text: Star 支持本书
       link: https://github.com/qqzhangyanhua/learn-opencode-agent
     - theme: alt
@@ -38,6 +41,8 @@ import PracticePreview from '../.vitepress/theme/components/PracticePreview.vue'
 - **实践篇**（P1-P23）：23 个可运行项目，从最小 Agent 到生产部署全覆盖
 
 建议**理论与实践穿插学习**：看完理论篇第 1-4 章后，先跑通实践篇 P1-P4，建立感性认知后再深入后续章节。
+
+当你完成基础理解，想把理论转向更具体的工程专题，可以通过“阅读中级篇”这一入口继续深化。
 
 ## 双轨学习体系
 
