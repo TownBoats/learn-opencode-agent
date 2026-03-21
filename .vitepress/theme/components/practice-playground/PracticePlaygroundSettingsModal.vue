@@ -23,6 +23,15 @@ const closeButtonRef = ref<HTMLButtonElement | null>(null)
 const apiKeyInputRef = ref<HTMLInputElement | null>(null)
 const baseUrlInputRef = ref<HTMLInputElement | null>(null)
 const modelInputRef = ref<HTMLInputElement | null>(null)
+const dialogTitleId = 'practice-playground-settings-title'
+const dialogDescId = 'practice-playground-settings-desc'
+const securityTipId = 'practice-playground-settings-security-tip'
+const saveStatusId = 'practice-playground-settings-save-status'
+const apiKeyStatusId = 'practice-playground-settings-api-key-status'
+const apiKeyOverwriteHintId = 'practice-playground-settings-api-key-overwrite-hint'
+const apiKeyErrorId = 'practice-playground-settings-api-key-error'
+const baseUrlErrorId = 'practice-playground-settings-base-url-error'
+const modelErrorId = 'practice-playground-settings-model-error'
 
 function syncDraftFromProps() {
   const storedApiKey = props.config.apiKey.trim()
@@ -70,6 +79,38 @@ const maskedApiKeyLabel = computed(() => {
   }
   return hasStoredApiKey.value ? '已填写' : '未填写'
 })
+const normalizedCurrentConfig = computed(() => ({
+  apiKey: props.config.apiKey.trim(),
+  baseURL: props.config.baseURL.trim(),
+  model: props.config.model.trim(),
+}))
+const normalizedDraftConfig = computed(() => ({
+  apiKey: isReplacingApiKey.value ? draft.value.apiKey.trim() : normalizedCurrentConfig.value.apiKey,
+  baseURL: draft.value.baseURL.trim(),
+  model: draft.value.model.trim(),
+}))
+const apiKeyError = computed(() => (
+  normalizedDraftConfig.value.apiKey ? '' : '请输入 API Key。'
+))
+const baseUrlError = computed(() => (
+  normalizedDraftConfig.value.baseURL ? '' : '请输入接口地址。'
+))
+const modelError = computed(() => (
+  normalizedDraftConfig.value.model ? '' : '请输入模型名称。'
+))
+const hasPendingChanges = computed(() => {
+  return normalizedDraftConfig.value.apiKey !== normalizedCurrentConfig.value.apiKey
+    || normalizedDraftConfig.value.baseURL !== normalizedCurrentConfig.value.baseURL
+    || normalizedDraftConfig.value.model !== normalizedCurrentConfig.value.model
+})
+const saveDisabledReason = computed(() => {
+  if (apiKeyError.value) return apiKeyError.value
+  if (baseUrlError.value) return baseUrlError.value
+  if (modelError.value) return modelError.value
+  if (!hasPendingChanges.value) return '当前没有需要保存的变更。'
+  return ''
+})
+const isSaveDisabled = computed(() => Boolean(saveDisabledReason.value))
 
 function handleFieldChange(field: keyof PracticePlaygroundConfig, value: string) {
   draft.value = {
@@ -91,11 +132,11 @@ function handleStartReplacingApiKey() {
 }
 
 function handleSave() {
+  if (isSaveDisabled.value) return
+
   emit('save', {
     ...draft.value,
-    apiKey: (isReplacingApiKey.value ? draft.value.apiKey : props.config.apiKey).trim(),
-    baseURL: draft.value.baseURL.trim(),
-    model: draft.value.model.trim(),
+    ...normalizedDraftConfig.value,
   })
 }
 
@@ -112,17 +153,17 @@ function handleWindowKeydown(event: KeyboardEvent) {
 }
 
 function focusPreferredField() {
-  if (isReplacingApiKey.value && !hasStoredApiKey.value) {
+  if (apiKeyError.value) {
     apiKeyInputRef.value?.focus()
     return
   }
 
-  if (!draft.value.baseURL.trim()) {
+  if (baseUrlError.value) {
     baseUrlInputRef.value?.focus()
     return
   }
 
-  if (!draft.value.model.trim()) {
+  if (modelError.value) {
     modelInputRef.value?.focus()
     return
   }
@@ -184,6 +225,11 @@ function trapFocusInsideModal(event: KeyboardEvent) {
   }
 }
 
+function buildAriaDescribedBy(ids: Array<string | false | null | undefined>): string | undefined {
+  const resolved = ids.filter(Boolean).join(' ')
+  return resolved || undefined
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleWindowKeydown)
 })
@@ -206,12 +252,13 @@ onUnmounted(() => {
         class="modal-card"
         role="dialog"
         aria-modal="true"
-        aria-label="在线运行设置"
+        :aria-labelledby="dialogTitleId"
+        :aria-describedby="buildAriaDescribedBy([dialogDescId, securityTipId, saveStatusId])"
       >
         <header class="modal-header">
           <div>
-            <h2>在线运行设置</h2>
-            <p>配置只保存在当前浏览器本地，不会提交到仓库。</p>
+            <h2 :id="dialogTitleId">在线运行设置</h2>
+            <p :id="dialogDescId">配置只保存在当前浏览器本地，不会提交到仓库。</p>
           </div>
           <button ref="closeButtonRef" type="button" class="icon-button" @click="emit('close')">关闭</button>
         </header>
@@ -226,6 +273,14 @@ onUnmounted(() => {
                 :value="draft.apiKey"
                 placeholder="sk-..."
                 autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                :aria-invalid="Boolean(apiKeyError)"
+                :aria-describedby="buildAriaDescribedBy([
+                  apiKeyStatusId,
+                  !isReplacingApiKey && apiKeyOverwriteHintId,
+                  apiKeyError && apiKeyErrorId,
+                ])"
                 @input="handleFieldChange('apiKey', ($event.target as HTMLInputElement).value)"
               />
               <button type="button" class="subtle-button" @click="isApiKeyVisible = !isApiKeyVisible">
@@ -238,8 +293,9 @@ onUnmounted(() => {
                 重新输入
               </button>
             </div>
-            <small>当前状态：{{ maskedApiKeyLabel }}</small>
-            <small v-if="!isReplacingApiKey">重新输入后会覆盖当前已保存的 Key。</small>
+            <small :id="apiKeyStatusId">当前状态：{{ maskedApiKeyLabel }}</small>
+            <small v-if="!isReplacingApiKey" :id="apiKeyOverwriteHintId">重新输入后会覆盖当前已保存的 Key。</small>
+            <small v-if="apiKeyError" :id="apiKeyErrorId" class="field-error">{{ apiKeyError }}</small>
           </label>
 
           <label class="config-item">
@@ -249,8 +305,13 @@ onUnmounted(() => {
               type="text"
               :value="draft.baseURL"
               placeholder="https://api.openai.com/v1"
+              autocapitalize="off"
+              spellcheck="false"
+              :aria-invalid="Boolean(baseUrlError)"
+              :aria-describedby="baseUrlError ? baseUrlErrorId : undefined"
               @input="handleFieldChange('baseURL', ($event.target as HTMLInputElement).value)"
             />
+            <small v-if="baseUrlError" :id="baseUrlErrorId" class="field-error">{{ baseUrlError }}</small>
           </label>
 
           <label class="config-item">
@@ -260,19 +321,35 @@ onUnmounted(() => {
               type="text"
               :value="draft.model"
               placeholder="gpt-4o"
+              autocapitalize="off"
+              spellcheck="false"
+              :aria-invalid="Boolean(modelError)"
+              :aria-describedby="modelError ? modelErrorId : undefined"
               @input="handleFieldChange('model', ($event.target as HTMLInputElement).value)"
             />
+            <small v-if="modelError" :id="modelErrorId" class="field-error">{{ modelError }}</small>
           </label>
         </div>
 
         <footer class="modal-footer">
-          <p class="security-tip">
+          <p :id="securityTipId" class="security-tip">
             安全提示：请勿在公共设备保存敏感配置，离开前建议清空配置。
           </p>
           <div class="actions-row">
             <button type="button" class="ghost-button" @click="emit('clear')">清空配置</button>
-            <button type="button" class="primary-button" @click="handleSave">保存到本地</button>
+            <button
+              type="button"
+              class="primary-button"
+              :disabled="isSaveDisabled"
+              :aria-describedby="saveStatusId"
+              @click="handleSave"
+            >
+              保存到本地
+            </button>
           </div>
+          <p :id="saveStatusId" :class="['save-status', { error: isSaveDisabled }]">
+            {{ saveDisabledReason || '配置准备就绪，保存后会立即用于当前工作台。' }}
+          </p>
         </footer>
       </section>
     </div>
@@ -363,6 +440,10 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
+.field-error {
+  color: #b42318;
+}
+
 .secret-input-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -392,6 +473,7 @@ onUnmounted(() => {
   gap: 12px;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .security-tip {
@@ -414,10 +496,33 @@ onUnmounted(() => {
   background: var(--vp-c-brand-soft);
 }
 
+.primary-button:disabled,
+.ghost-button:disabled,
+.subtle-button:disabled,
+.icon-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.save-status {
+  margin: 0 0 0 auto;
+  color: var(--vp-c-text-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.save-status.error {
+  color: #b42318;
+}
+
 @media (max-width: 700px) {
   .modal-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .save-status {
+    margin-left: 0;
   }
 }
 </style>
