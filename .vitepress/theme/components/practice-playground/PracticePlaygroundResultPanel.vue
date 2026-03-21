@@ -18,6 +18,7 @@ const emit = defineEmits<{
 
 const outputCopyStatus = ref('')
 const debugCopyStatus = ref('')
+const summaryCopyStatus = ref('')
 const outputPanelRef = ref<HTMLElement | null>(null)
 let lastOutputLength = 0
 
@@ -85,6 +86,16 @@ const durationLabel = computed(() => {
   if (props.runState.durationMs === null) return '尚无'
   return `${props.runState.durationMs} ms`
 })
+const summaryText = computed(() => [
+  `章节：${props.chapterLabel}`,
+  `模板：${props.templateLabel}`,
+  `配置来源：${props.configSourceLabel}`,
+  `最近保存：${props.configSavedAtLabel}`,
+  `模型：${configSummary.value?.model || '尚未运行'}`,
+  `接口地址：${configSummary.value?.baseURL || '尚未运行'}`,
+  `密钥状态：${apiKeyStatusLabel.value}`,
+  `耗时：${durationLabel.value}`,
+].join('\n'))
 
 watch(
   () => props.runState.outputText,
@@ -100,17 +111,33 @@ watch(
 )
 
 watch(
-  () => [outputCopyStatus.value, debugCopyStatus.value],
-  ([outputValue, debugValue]) => {
-    const value = outputValue || debugValue
+  () => [summaryCopyStatus.value, outputCopyStatus.value, debugCopyStatus.value],
+  ([summaryValue, outputValue, debugValue]) => {
+    const value = summaryValue || outputValue || debugValue
     if (!value) return
     const timer = window.setTimeout(() => {
+      summaryCopyStatus.value = ''
       outputCopyStatus.value = ''
       debugCopyStatus.value = ''
     }, 1800)
     return () => window.clearTimeout(timer)
   },
 )
+
+async function handleCopySummary() {
+  const text = summaryText.value.trim()
+  if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+    summaryCopyStatus.value = '当前环境不支持复制摘要。'
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(text)
+    summaryCopyStatus.value = '请求摘要已复制。'
+  } catch {
+    summaryCopyStatus.value = '复制失败，请手动复制。'
+  }
+}
 
 async function handleCopyOutput() {
   const text = props.runState.outputText.trim()
@@ -162,7 +189,16 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
     <article class="result-card summary-card">
       <div class="summary-header">
         <h2>请求摘要</h2>
-        <span :class="['status-chip', statusMeta.tone]">{{ statusMeta.label }}</span>
+        <div class="summary-actions">
+          <button
+            type="button"
+            class="ghost-button"
+            @click="handleCopySummary"
+          >
+            复制摘要
+          </button>
+          <span :class="['status-chip', statusMeta.tone]">{{ statusMeta.label }}</span>
+        </div>
       </div>
 
       <dl class="summary-grid">
@@ -199,6 +235,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           <dd>{{ durationLabel }}</dd>
         </div>
       </dl>
+      <p v-if="summaryCopyStatus" class="copy-status" role="status" aria-live="polite">{{ summaryCopyStatus }}</p>
     </article>
 
     <article class="result-card output-card">
@@ -308,6 +345,14 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .status-chip {
