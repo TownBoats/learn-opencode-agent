@@ -98,7 +98,7 @@ const workStatus = computed<{
   if (!isConfigReady.value) {
     return {
       label: '待配置',
-      hint: '先在设置中补齐 API Key、baseURL 和 model。',
+      hint: '先在设置中补齐 API Key、接口地址和模型名称。',
       tone: 'idle',
     }
   }
@@ -226,6 +226,11 @@ function handleRunStateUpdate(nextState: PracticePlaygroundRunState) {
 }
 
 function handleRun() {
+  if (!isConfigReady.value) {
+    workspaceMessage.value = '先在设置中补齐 API Key、接口地址和模型名称。'
+    return
+  }
+
   if (runValidationMessage.value) {
     runState.value = {
       ...runState.value,
@@ -237,10 +242,10 @@ function handleRun() {
     return
   }
 
-  const startedAt = Date.now()
   const appliedTemplate = clonePracticePlaygroundTemplate(editorState.value.template)
 
   lastAppliedTemplate.value = appliedTemplate
+  workspaceMessage.value = `已发起 ${selectedChapter.value.playground.title} 的运行请求，请在右侧查看输出和调试信息。`
   void runnerRef.value?.run({
     chapter: selectedChapter.value,
     config: { ...playgroundConfig.value },
@@ -300,7 +305,7 @@ function getLockedToolIssue(
       :work-status-tone="workStatus.tone"
       :has-api-key="hasApiKey"
       :is-config-ready="isConfigReady"
-      :is-run-blocked="Boolean(runValidationMessage)"
+      :is-run-blocked="!isConfigReady || Boolean(runValidationMessage)"
       :is-running="runState.status === 'running'"
       @select-chapter="handleChapterSelect"
       @open-settings="handleOpenSettings"
@@ -396,6 +401,17 @@ function getLockedToolIssue(
 @media (max-width: 900px) {
   .workspace-main {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspace-pane {
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .workspace-pane h2 {
+    font-size: 19px;
   }
 }
 </style>

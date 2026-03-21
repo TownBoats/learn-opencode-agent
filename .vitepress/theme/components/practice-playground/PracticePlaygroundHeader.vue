@@ -47,8 +47,8 @@ const emit = defineEmits<{
       <div class="header-title">
         <h1>{{ title }}</h1>
         <p>
-          <span>Model：{{ modelLabel }}</span>
-          <span>{{ isConfigReady ? '配置完整' : '配置不完整' }}</span>
+          <span>模型：{{ modelLabel }}</span>
+          <span>{{ isConfigReady ? '运行配置完整' : '运行配置待补齐' }}</span>
           <span>{{ hasApiKey ? 'API Key 已配置' : 'API Key 未配置' }}</span>
         </p>
         <div class="header-status">
@@ -67,7 +67,7 @@ const emit = defineEmits<{
         :disabled="isRunning || isRunBlocked"
         @click="emit('run')"
       >
-        {{ isRunning ? '运行中...' : '运行' }}
+        {{ isRunning ? '运行中…' : '运行' }}
       </button>
     </div>
   </header>
@@ -229,6 +229,30 @@ const emit = defineEmits<{
   .header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspace-header {
+    padding: 16px;
+  }
+
+  .header-title h1 {
+    font-size: 22px;
+  }
+
+  .header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ghost-button,
+  .run-button {
+    width: 100%;
+  }
+
+  .run-button {
+    grid-column: 1 / -1;
   }
 }
 </style>

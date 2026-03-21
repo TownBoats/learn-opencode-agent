@@ -124,7 +124,7 @@ function handleSave() {
           </label>
 
           <label class="config-item">
-            <span>baseURL</span>
+            <span>接口地址（baseURL）</span>
             <input
               type="text"
               :value="draft.baseURL"
@@ -134,7 +134,7 @@ function handleSave() {
           </label>
 
           <label class="config-item">
-            <span>model</span>
+            <span>模型（model）</span>
             <input
               type="text"
               :value="draft.model"

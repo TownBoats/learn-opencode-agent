@@ -55,6 +55,14 @@ const debugEntries = computed(() =>
     tone: resolveDebugTone(line),
   })),
 )
+const apiKeyStatusLabel = computed(() => {
+  if (!configSummary.value) return '尚未运行'
+  return configSummary.value.hasApiKey ? '已配置' : '未配置'
+})
+const durationLabel = computed(() => {
+  if (props.runState.durationMs === null) return '尚无'
+  return `${props.runState.durationMs} ms`
+})
 
 watch(
   () => props.runState.outputText,
@@ -115,20 +123,20 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 
       <dl class="summary-grid">
         <div>
-          <dt>model</dt>
+          <dt>模型</dt>
           <dd>{{ configSummary?.model || '尚未运行' }}</dd>
         </div>
         <div>
-          <dt>baseURL</dt>
+          <dt>接口地址</dt>
           <dd>{{ configSummary?.baseURL || '尚未运行' }}</dd>
         </div>
         <div>
-          <dt>hasApiKey</dt>
-          <dd>{{ configSummary ? String(configSummary.hasApiKey) : '尚未运行' }}</dd>
+          <dt>密钥状态</dt>
+          <dd>{{ apiKeyStatusLabel }}</dd>
         </div>
         <div>
-          <dt>durationMs</dt>
-          <dd>{{ runState.durationMs === null ? '尚无' : runState.durationMs }}</dd>
+          <dt>耗时</dt>
+          <dd>{{ durationLabel }}</dd>
         </div>
       </dl>
     </article>
@@ -337,6 +345,10 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 @media (max-width: 700px) {
   .result-panel {
     grid-template-rows: auto auto auto;
+  }
+
+  .result-card {
+    padding: 12px;
   }
 
   .summary-grid {

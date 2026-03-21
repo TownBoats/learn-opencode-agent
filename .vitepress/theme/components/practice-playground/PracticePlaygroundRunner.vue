@@ -53,8 +53,9 @@ function createConfigSnapshot(config: PracticePlaygroundConfig): PracticePlaygro
 
 function invalidateActiveRequest() {
   activeRequestToken.value += 1
-  activeAbortController.value?.abort()
+  const currentController = activeAbortController.value
   activeAbortController.value = null
+  currentController?.abort()
 }
 
 function abort(reason = '请求已取消。') {
@@ -64,12 +65,7 @@ function abort(reason = '请求已取消。') {
 }
 
 function reset(reason = '请求已重置。') {
-  if (activeAbortController.value) {
-    lastAbortReason.value = reason
-    activeAbortController.value.abort()
-    return
-  }
-
+  if (activeAbortController.value) lastAbortReason.value = reason
   invalidateActiveRequest()
   lastAbortReason.value = '请求已取消。'
   syncRunState(createInitialPracticePlaygroundRunState())
