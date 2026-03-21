@@ -26,7 +26,11 @@ const debugListRef = ref<HTMLElement | null>(null)
 const liveDurationMs = ref<number | null>(null)
 const outputExpanded = ref(false)
 const debugExpanded = ref(false)
+const outputFlashTone = ref<'success' | ''>('')
+const debugFlashTone = ref<'success' | 'error' | ''>('')
 let liveDurationTimer: number | null = null
+let outputFlashTimer: number | null = null
+let debugFlashTimer: number | null = null
 let lastOutputLength = 0
 let lastDebugItemCount = 0
 
@@ -140,6 +144,21 @@ const debugStatsLabel = computed(() => {
   if (!totalLines) return '暂无调试'
   return `${totalLines} 条日志`
 })
+const outputCardClass = computed(() => [
+  'result-card',
+  'output-card',
+  {
+    'flash-success': outputFlashTone.value === 'success',
+  },
+])
+const debugCardClass = computed(() => [
+  'result-card',
+  'debug-card',
+  {
+    'flash-success': debugFlashTone.value === 'success',
+    'flash-error': debugFlashTone.value === 'error',
+  },
+])
 const summaryText = computed(() => [
   `章节：${props.chapterLabel}`,
   `模板：${props.templateLabel}`,
@@ -222,16 +241,19 @@ watch(
     await nextTick()
 
     if (status === 'error') {
+      triggerDebugFlash('error')
       scrollCardIntoView(debugCardRef.value)
       return
     }
 
     if (hasRunnableOutput.value) {
+      triggerOutputFlash()
       scrollCardIntoView(outputCardRef.value)
       return
     }
 
     if (hasDebugContent.value) {
+      triggerDebugFlash('success')
       scrollCardIntoView(debugCardRef.value)
     }
   },
@@ -239,6 +261,7 @@ watch(
 
 onUnmounted(() => {
   stopLiveDurationTimer()
+  stopFlashTimers()
 })
 
 function scrollCardIntoView(target: HTMLElement | null) {
@@ -256,6 +279,42 @@ function stopLiveDurationTimer() {
     window.clearInterval(liveDurationTimer)
     liveDurationTimer = null
   }
+}
+
+function stopFlashTimers() {
+  if (typeof window === 'undefined') return
+  if (outputFlashTimer !== null) {
+    window.clearTimeout(outputFlashTimer)
+    outputFlashTimer = null
+  }
+  if (debugFlashTimer !== null) {
+    window.clearTimeout(debugFlashTimer)
+    debugFlashTimer = null
+  }
+}
+
+function triggerOutputFlash() {
+  if (typeof window === 'undefined') return
+  outputFlashTone.value = 'success'
+  if (outputFlashTimer !== null) {
+    window.clearTimeout(outputFlashTimer)
+  }
+  outputFlashTimer = window.setTimeout(() => {
+    outputFlashTone.value = ''
+    outputFlashTimer = null
+  }, 1800)
+}
+
+function triggerDebugFlash(tone: 'success' | 'error') {
+  if (typeof window === 'undefined') return
+  debugFlashTone.value = tone
+  if (debugFlashTimer !== null) {
+    window.clearTimeout(debugFlashTimer)
+  }
+  debugFlashTimer = window.setTimeout(() => {
+    debugFlashTone.value = ''
+    debugFlashTimer = null
+  }, 1800)
 }
 
 function scrollPanelToBottom(target: HTMLElement | null) {
@@ -400,7 +459,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       <p v-if="summaryCopyStatus" class="copy-status" role="status" aria-live="polite">{{ summaryCopyStatus }}</p>
     </article>
 
-    <article ref="outputCardRef" class="result-card output-card">
+    <article ref="outputCardRef" :class="outputCardClass">
       <div class="card-header">
         <div class="card-title">
           <h2>输出</h2>
@@ -460,7 +519,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       <p v-if="outputCopyStatus" class="copy-status" role="status" aria-live="polite">{{ outputCopyStatus }}</p>
     </article>
 
-    <article ref="debugCardRef" class="result-card debug-card">
+    <article ref="debugCardRef" :class="debugCardClass">
       <div class="card-header">
         <div class="card-title">
           <h2>调试</h2>
@@ -533,6 +592,25 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   gap: 10px;
   min-height: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+
+.result-card.flash-success {
+  border-color: color-mix(in srgb, #16a34a 52%, var(--vp-c-divider));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #16a34a 10%, var(--vp-c-bg)), color-mix(in srgb, var(--vp-c-bg) 94%, white));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 0 3px color-mix(in srgb, #16a34a 12%, transparent);
+}
+
+.result-card.flash-error {
+  border-color: color-mix(in srgb, #ef4444 52%, var(--vp-c-divider));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #ef4444 10%, var(--vp-c-bg)), color-mix(in srgb, var(--vp-c-bg) 94%, white));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 0 3px color-mix(in srgb, #ef4444 12%, transparent);
 }
 
 .summary-card {
