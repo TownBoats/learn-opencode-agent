@@ -5,6 +5,9 @@ import type { PracticePlaygroundRunState } from './practicePlaygroundTypes'
 const props = defineProps<{
   runState: PracticePlaygroundRunState
 }>()
+const emit = defineEmits<{
+  clear: []
+}>()
 
 const copyStatus = ref('')
 const outputPanelRef = ref<HTMLElement | null>(null)
@@ -12,6 +15,12 @@ let lastOutputLength = 0
 
 const configSummary = computed(() => props.runState.configSnapshot)
 const hasRunnableOutput = computed(() => Boolean(props.runState.outputText.trim()))
+const hasRunArtifacts = computed(() => {
+  return props.runState.status !== 'idle'
+    || Boolean(props.runState.outputText.trim())
+    || props.runState.debugLines.length > 0
+    || props.runState.configSnapshot !== null
+})
 const statusMeta = computed(() => {
   if (props.runState.status === 'running') {
     return {
@@ -146,14 +155,24 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
     <article class="result-card output-card">
       <div class="card-header">
         <h2>输出</h2>
-        <button
-          type="button"
-          class="ghost-button"
-          :disabled="!hasRunnableOutput"
-          @click="handleCopyOutput"
-        >
-          复制输出
-        </button>
+        <div class="card-actions">
+          <button
+            type="button"
+            class="ghost-button"
+            :disabled="!hasRunArtifacts"
+            @click="emit('clear')"
+          >
+            清空结果
+          </button>
+          <button
+            type="button"
+            class="ghost-button"
+            :disabled="!hasRunnableOutput"
+            @click="handleCopyOutput"
+          >
+            复制输出
+          </button>
+        </div>
       </div>
       <pre ref="outputPanelRef" :class="['output-panel', { empty: !runState.outputText.trim() }]">
         {{ outputSummary }}
@@ -217,6 +236,12 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 .card-header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .status-chip {

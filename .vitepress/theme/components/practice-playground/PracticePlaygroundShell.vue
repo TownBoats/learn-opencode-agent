@@ -330,6 +330,16 @@ function handleResetTemplate() {
   }
 }
 
+function handleClearResult() {
+  runnerRef.value?.reset('请求已取消：你清空了结果面板。')
+  runState.value = createInitialPracticePlaygroundRunState()
+  lastAppliedTemplate.value = null
+  workspaceFeedback.value = {
+    text: '已清空结果面板。',
+    tone: 'warning',
+  }
+}
+
 function handleRunStateUpdate(nextState: PracticePlaygroundRunState) {
   runState.value = nextState
 }
@@ -477,7 +487,7 @@ function findLastAbortLine(debugLines: string[]): string | null {
         <p v-if="lastAppliedTemplate" class="placeholder-note">
           最近一次触发运行的模板：{{ lastAppliedTemplate.meta.title }}
         </p>
-        <PracticePlaygroundResultPanel :run-state="runState" />
+        <PracticePlaygroundResultPanel :run-state="runState" @clear="handleClearResult" />
       </article>
     </section>
 
