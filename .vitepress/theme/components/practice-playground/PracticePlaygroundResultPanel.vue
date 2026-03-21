@@ -16,11 +16,12 @@ const emit = defineEmits<{
   rerun: []
 }>()
 
-const outputCopyStatus = ref('')
-const debugCopyStatus = ref('')
-const summaryCopyStatus = ref('')
-const outputScrollStatus = ref('')
-const debugScrollStatus = ref('')
+interface FeedbackToast {
+  id: number
+  message: string
+  tone: 'success' | 'warning'
+}
+
 const outputCardRef = ref<HTMLElement | null>(null)
 const debugCardRef = ref<HTMLElement | null>(null)
 const outputPanelRef = ref<HTMLElement | null>(null)
@@ -30,9 +31,13 @@ const outputExpanded = ref(false)
 const debugExpanded = ref(false)
 const outputFlashTone = ref<'success' | ''>('')
 const debugFlashTone = ref<'success' | 'error' | ''>('')
+const activeToast = ref<FeedbackToast | null>(null)
+const toastQueue = ref<FeedbackToast[]>([])
+let nextToastId = 0
 let liveDurationTimer: number | null = null
 let outputFlashTimer: number | null = null
 let debugFlashTimer: number | null = null
+let toastTimer: number | null = null
 let lastOutputLength = 0
 let lastDebugItemCount = 0
 
@@ -162,15 +167,10 @@ const debugCardClass = computed(() => [
   },
 ])
 const activeToastMessage = computed(() => (
-  summaryCopyStatus.value
-  || outputCopyStatus.value
-  || debugCopyStatus.value
-  || outputScrollStatus.value
-  || debugScrollStatus.value
+  activeToast.value?.message || ''
 ))
 const activeToastTone = computed<'success' | 'warning'>(() => {
-  if (!activeToastMessage.value) return 'success'
-  return /失败|不支持/.test(activeToastMessage.value) ? 'warning' : 'success'
+  return activeToast.value?.tone || 'success'
 })
 const summaryText = computed(() => [
   `章节：${props.chapterLabel}`,
@@ -206,28 +206,6 @@ watch(
     await nextTick()
     if (!debugListRef.value) return
     debugListRef.value.scrollTop = debugListRef.value.scrollHeight
-  },
-)
-
-watch(
-  () => [
-    summaryCopyStatus.value,
-    outputCopyStatus.value,
-    debugCopyStatus.value,
-    outputScrollStatus.value,
-    debugScrollStatus.value,
-  ],
-  ([summaryValue, outputValue, debugValue, outputScrollValue, debugScrollValue]) => {
-    const value = summaryValue || outputValue || debugValue || outputScrollValue || debugScrollValue
-    if (!value) return
-    const timer = window.setTimeout(() => {
-      summaryCopyStatus.value = ''
-      outputCopyStatus.value = ''
-      debugCopyStatus.value = ''
-      outputScrollStatus.value = ''
-      debugScrollStatus.value = ''
-    }, 1800)
-    return () => window.clearTimeout(timer)
   },
 )
 
@@ -283,6 +261,7 @@ watch(
 onUnmounted(() => {
   stopLiveDurationTimer()
   stopFlashTimers()
+  stopToastTimer()
 })
 
 function scrollCardIntoView(target: HTMLElement | null) {
@@ -312,6 +291,46 @@ function stopFlashTimers() {
     window.clearTimeout(debugFlashTimer)
     debugFlashTimer = null
   }
+}
+
+function stopToastTimer() {
+  if (typeof window === 'undefined') return
+  if (toastTimer !== null) {
+    window.clearTimeout(toastTimer)
+    toastTimer = null
+  }
+}
+
+function enqueueToast(message: string, tone: 'success' | 'warning') {
+  const normalizedMessage = message.trim()
+  if (!normalizedMessage) return
+
+  const lastQueued = toastQueue.value[toastQueue.value.length - 1]
+  if (activeToast.value?.message === normalizedMessage && activeToast.value.tone === tone) return
+  if (lastQueued?.message === normalizedMessage && lastQueued.tone === tone) return
+
+  toastQueue.value.push({
+    id: nextToastId,
+    message: normalizedMessage,
+    tone,
+  })
+  nextToastId += 1
+  flushToastQueue()
+}
+
+function flushToastQueue() {
+  if (typeof window === 'undefined') return
+  if (activeToast.value || toastQueue.value.length === 0) return
+
+  activeToast.value = toastQueue.value.shift() ?? null
+  if (!activeToast.value) return
+
+  stopToastTimer()
+  toastTimer = window.setTimeout(() => {
+    activeToast.value = null
+    toastTimer = null
+    flushToastQueue()
+  }, 1800)
 }
 
 function triggerOutputFlash() {
@@ -359,42 +378,42 @@ function toggleDebugExpanded() {
 function handleScrollOutputToBottom() {
   if (!hasRunnableOutput.value) return
   scrollPanelToBottom(outputPanelRef.value)
-  outputScrollStatus.value = '已定位到输出底部。'
+  enqueueToast('已定位到输出底部。', 'success')
 }
 
 function handleScrollDebugToBottom() {
   if (!hasDebugContent.value) return
   scrollPanelToBottom(debugListRef.value)
-  debugScrollStatus.value = '已定位到调试底部。'
+  enqueueToast('已定位到调试底部。', 'success')
 }
 
 async function handleCopySummary() {
   const text = summaryText.value.trim()
   if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-    summaryCopyStatus.value = '当前环境不支持复制摘要。'
+    enqueueToast('当前环境不支持复制摘要。', 'warning')
     return
   }
 
   try {
     await navigator.clipboard.writeText(text)
-    summaryCopyStatus.value = '请求摘要已复制。'
+    enqueueToast('请求摘要已复制。', 'success')
   } catch {
-    summaryCopyStatus.value = '复制失败，请手动复制。'
+    enqueueToast('复制失败，请手动复制。', 'warning')
   }
 }
 
 async function handleCopyOutput() {
   const text = props.runState.outputText.trim()
   if (!text.trim() || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-    outputCopyStatus.value = '当前环境不支持复制输出。'
+    enqueueToast('当前环境不支持复制输出。', 'warning')
     return
   }
 
   try {
     await navigator.clipboard.writeText(text)
-    outputCopyStatus.value = '输出已复制。'
+    enqueueToast('输出已复制。', 'success')
   } catch {
-    outputCopyStatus.value = '复制失败，请手动复制。'
+    enqueueToast('复制失败，请手动复制。', 'warning')
   }
 }
 
@@ -406,15 +425,15 @@ async function handleCopyDebug() {
   const text = lines.join('\n')
 
   if (!text.trim() || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-    debugCopyStatus.value = '当前环境不支持复制调试信息。'
+    enqueueToast('当前环境不支持复制调试信息。', 'warning')
     return
   }
 
   try {
     await navigator.clipboard.writeText(text)
-    debugCopyStatus.value = '调试信息已复制。'
+    enqueueToast('调试信息已复制。', 'success')
   } catch {
-    debugCopyStatus.value = '复制失败，请手动复制。'
+    enqueueToast('复制失败，请手动复制。', 'warning')
   }
 }
 
