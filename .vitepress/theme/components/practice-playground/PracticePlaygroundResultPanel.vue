@@ -466,7 +466,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
         <div class="summary-actions">
           <button
             type="button"
-            class="ghost-button"
+            class="action-button action-button-subtle"
             @click="handleCopySummary"
           >
             复制摘要
@@ -518,51 +518,55 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           <span class="card-meta">{{ outputStatsLabel }}</span>
         </div>
         <div class="card-actions">
-          <button
-            type="button"
-            class="ghost-button"
-            :title="rerunButtonTitle"
-            :disabled="!canRerun || isRunning"
-            @click="emit('rerun')"
-          >
-            {{ isRunning ? '运行中…' : '再次运行' }}
-          </button>
-          <button
-            type="button"
-            class="ghost-button"
-            :title="clearButtonTitle"
-            :disabled="!hasRunArtifacts"
-            @click="emit('clear')"
-          >
-            清空结果
-          </button>
-          <button
-            type="button"
-            class="ghost-button"
-            :title="outputToggleTitle"
-            :disabled="!canToggleOutputExpanded"
-            @click="toggleOutputExpanded"
-          >
-            {{ outputToggleLabel }}
-          </button>
-          <button
-            type="button"
-            class="ghost-button"
-            :title="scrollOutputButtonTitle"
-            :disabled="!hasRunnableOutput"
-            @click="handleScrollOutputToBottom"
-          >
-            回到底部
-          </button>
-          <button
-            type="button"
-            class="ghost-button"
-            :title="copyOutputButtonTitle"
-            :disabled="!hasRunnableOutput"
-            @click="handleCopyOutput"
-          >
-            复制输出
-          </button>
+          <div class="card-actions-main">
+            <button
+              type="button"
+              class="action-button action-button-primary"
+              :title="rerunButtonTitle"
+              :disabled="!canRerun || isRunning"
+              @click="emit('rerun')"
+            >
+              {{ isRunning ? '运行中…' : '再次运行' }}
+            </button>
+            <button
+              type="button"
+              class="action-button action-button-subtle"
+              :title="clearButtonTitle"
+              :disabled="!hasRunArtifacts"
+              @click="emit('clear')"
+            >
+              清空结果
+            </button>
+          </div>
+          <div class="card-actions-secondary">
+            <button
+              type="button"
+              class="action-button action-button-utility"
+              :title="outputToggleTitle"
+              :disabled="!canToggleOutputExpanded"
+              @click="toggleOutputExpanded"
+            >
+              {{ outputToggleLabel }}
+            </button>
+            <button
+              type="button"
+              class="action-button action-button-utility"
+              :title="scrollOutputButtonTitle"
+              :disabled="!hasRunnableOutput"
+              @click="handleScrollOutputToBottom"
+            >
+              回到底部
+            </button>
+            <button
+              type="button"
+              class="action-button action-button-utility"
+              :title="copyOutputButtonTitle"
+              :disabled="!hasRunnableOutput"
+              @click="handleCopyOutput"
+            >
+              复制输出
+            </button>
+          </div>
         </div>
       </div>
       <pre ref="outputPanelRef" :class="['output-panel', { empty: !runState.outputText.trim(), expanded: outputExpanded }]">
@@ -576,10 +580,10 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           <h2>调试</h2>
           <span class="card-meta">{{ debugStatsLabel }}</span>
         </div>
-        <div class="card-actions">
+        <div class="card-actions card-actions-secondary">
           <button
             type="button"
-            class="ghost-button"
+            class="action-button action-button-utility"
             :title="debugToggleTitle"
             :disabled="!canToggleDebugExpanded"
             @click="toggleDebugExpanded"
@@ -588,7 +592,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           </button>
           <button
             type="button"
-            class="ghost-button"
+            class="action-button action-button-utility"
             :title="scrollDebugButtonTitle"
             :disabled="!hasDebugContent"
             @click="handleScrollDebugToBottom"
@@ -597,7 +601,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           </button>
           <button
             type="button"
-            class="ghost-button"
+            class="action-button action-button-utility"
             :title="copyDebugButtonTitle"
             :disabled="!hasDebugContent"
             @click="handleCopyDebug"
@@ -748,6 +752,15 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.card-actions-main,
+.card-actions-secondary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .summary-actions {
@@ -821,16 +834,33 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   word-break: break-word;
 }
 
-.ghost-button {
+.action-button {
   border-radius: 12px;
   padding: 9px 12px;
   border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 8%, var(--vp-c-divider));
   background: color-mix(in srgb, var(--vp-c-bg) 94%, white);
   cursor: pointer;
   font-weight: 600;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, opacity 160ms ease;
 }
 
-.ghost-button:disabled {
+.action-button-primary {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 28%, var(--vp-c-divider));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-brand-soft) 78%, white), var(--vp-c-brand-soft));
+  color: var(--vp-c-brand-1);
+}
+
+.action-button-subtle {
+  color: var(--vp-c-text-1);
+}
+
+.action-button-utility {
+  color: var(--vp-c-text-2);
+  background: color-mix(in srgb, var(--vp-c-bg) 90%, var(--vp-c-bg-soft));
+  border-style: dashed;
+}
+
+.action-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
