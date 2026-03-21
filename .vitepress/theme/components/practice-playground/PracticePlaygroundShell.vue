@@ -117,6 +117,11 @@ const workStatus = computed<{
     tone: 'ready',
   }
 })
+const isResetDisabled = computed(() => {
+  return !editorState.value.isDirty
+    && runState.value.status === 'idle'
+    && lastAppliedTemplate.value === null
+})
 const runnerInput = computed(() =>
   adaptPracticeTemplateToRunnerInput(
     selectedChapter.value,
@@ -306,6 +311,7 @@ function getLockedToolIssue(
       :has-api-key="hasApiKey"
       :is-config-ready="isConfigReady"
       :is-run-blocked="!isConfigReady || Boolean(runValidationMessage)"
+      :is-reset-disabled="isResetDisabled"
       :is-running="runState.status === 'running'"
       @select-chapter="handleChapterSelect"
       @open-settings="handleOpenSettings"

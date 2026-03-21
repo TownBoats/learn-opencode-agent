@@ -42,12 +42,13 @@ const statusMeta = computed(() => {
 const outputSummary = computed(() => {
   if (props.runState.outputText.trim()) return props.runState.outputText
   if (props.runState.status === 'error') return '本次运行失败，请查看下方调试信息。'
-  if (props.runState.status === 'running') return '请求进行中，等待模型返回...'
-  return '尚未运行，请先点击上方“运行”。'
+  if (props.runState.status === 'running') return '请求进行中，等待模型返回…'
+  return '尚未运行。先在顶部确认配置，再点击“运行”查看结果。'
 })
 const debugLines = computed(() => {
   if (props.runState.debugLines.length > 0) return props.runState.debugLines
-  return ['等待运行。']
+  if (props.runState.status === 'running') return ['请求已发出，等待返回调试信息。']
+  return ['等待运行。发起请求后，这里会显示适配、工具调用和中断原因。']
 })
 const debugEntries = computed(() =>
   debugLines.value.map((line, index) => ({

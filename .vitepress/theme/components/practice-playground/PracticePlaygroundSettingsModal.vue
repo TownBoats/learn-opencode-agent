@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { PracticePlaygroundConfig } from './practicePlaygroundTypes'
 
 const props = defineProps<{
@@ -17,6 +17,11 @@ const draft = ref<PracticePlaygroundConfig>({ ...props.config, apiKey: '' })
 const isApiKeyVisible = ref(false)
 const hasStoredApiKey = ref(false)
 const isReplacingApiKey = ref(true)
+const previousFocusedElement = ref<HTMLElement | null>(null)
+const closeButtonRef = ref<HTMLButtonElement | null>(null)
+const apiKeyInputRef = ref<HTMLInputElement | null>(null)
+const baseUrlInputRef = ref<HTMLInputElement | null>(null)
+const modelInputRef = ref<HTMLInputElement | null>(null)
 
 function syncDraftFromProps() {
   const storedApiKey = props.config.apiKey.trim()
@@ -41,8 +46,20 @@ watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
+      previousFocusedElement.value = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
       syncDraftFromProps()
+      document.body.style.overflow = 'hidden'
+      void nextTick(() => {
+        focusPreferredField()
+      })
+      return
     }
+
+    document.body.style.overflow = ''
+    previousFocusedElement.value?.focus()
+    previousFocusedElement.value = null
   },
 )
 
@@ -67,6 +84,9 @@ function handleStartReplacingApiKey() {
     ...draft.value,
     apiKey: '',
   }
+  void nextTick(() => {
+    apiKeyInputRef.value?.focus()
+  })
 }
 
 function handleSave() {
@@ -84,12 +104,37 @@ function handleWindowKeydown(event: KeyboardEvent) {
   emit('close')
 }
 
+function focusPreferredField() {
+  if (isReplacingApiKey.value && !hasStoredApiKey.value) {
+    apiKeyInputRef.value?.focus()
+    return
+  }
+
+  if (!draft.value.baseURL.trim()) {
+    baseUrlInputRef.value?.focus()
+    return
+  }
+
+  if (!draft.value.model.trim()) {
+    modelInputRef.value?.focus()
+    return
+  }
+
+  if (isReplacingApiKey.value) {
+    apiKeyInputRef.value?.focus()
+    return
+  }
+
+  baseUrlInputRef.value?.focus()
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleWindowKeydown)
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -111,7 +156,7 @@ onUnmounted(() => {
             <h2>在线运行设置</h2>
             <p>配置只保存在当前浏览器本地，不会提交到仓库。</p>
           </div>
-          <button type="button" class="icon-button" @click="emit('close')">关闭</button>
+          <button ref="closeButtonRef" type="button" class="icon-button" @click="emit('close')">关闭</button>
         </header>
 
         <div class="modal-body">
@@ -119,6 +164,7 @@ onUnmounted(() => {
             <span>API Key</span>
             <div v-if="isReplacingApiKey" class="secret-input-row">
               <input
+                ref="apiKeyInputRef"
                 :type="isApiKeyVisible ? 'text' : 'password'"
                 :value="draft.apiKey"
                 placeholder="sk-..."
@@ -142,6 +188,7 @@ onUnmounted(() => {
           <label class="config-item">
             <span>接口地址（baseURL）</span>
             <input
+              ref="baseUrlInputRef"
               type="text"
               :value="draft.baseURL"
               placeholder="https://api.openai.com/v1"
@@ -152,6 +199,7 @@ onUnmounted(() => {
           <label class="config-item">
             <span>模型（model）</span>
             <input
+              ref="modelInputRef"
               type="text"
               :value="draft.model"
               placeholder="gpt-4o"

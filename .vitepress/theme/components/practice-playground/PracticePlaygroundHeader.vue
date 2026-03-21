@@ -12,6 +12,7 @@ const props = defineProps<{
   hasApiKey: boolean
   isConfigReady: boolean
   isRunBlocked: boolean
+  isResetDisabled: boolean
   isRunning: boolean
 }>()
 
@@ -60,7 +61,14 @@ const emit = defineEmits<{
 
     <div class="header-actions">
       <button type="button" class="ghost-button" @click="emit('open-settings')">设置</button>
-      <button type="button" class="ghost-button" @click="emit('reset-template')">重置</button>
+      <button
+        type="button"
+        class="ghost-button"
+        :disabled="isResetDisabled"
+        @click="emit('reset-template')"
+      >
+        重置
+      </button>
       <button
         type="button"
         class="run-button"
@@ -210,6 +218,7 @@ const emit = defineEmits<{
   background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-brand-soft) 78%, white), var(--vp-c-brand-soft));
 }
 
+.ghost-button:disabled,
 .run-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
