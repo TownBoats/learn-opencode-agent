@@ -3,10 +3,13 @@ import { computed, nextTick, ref, watch } from 'vue'
 import type { PracticePlaygroundRunState } from './practicePlaygroundTypes'
 
 const props = defineProps<{
+  canRerun: boolean
+  isRunning: boolean
   runState: PracticePlaygroundRunState
 }>()
 const emit = defineEmits<{
   clear: []
+  rerun: []
 }>()
 
 const copyStatus = ref('')
@@ -156,6 +159,14 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       <div class="card-header">
         <h2>输出</h2>
         <div class="card-actions">
+          <button
+            type="button"
+            class="ghost-button"
+            :disabled="!canRerun || isRunning"
+            @click="emit('rerun')"
+          >
+            {{ isRunning ? '运行中…' : '再次运行' }}
+          </button>
           <button
             type="button"
             class="ghost-button"

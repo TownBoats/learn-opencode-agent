@@ -170,6 +170,7 @@ const isResetDisabled = computed(() => {
     && runState.value.status === 'idle'
     && lastAppliedTemplate.value === null
 })
+const canRun = computed(() => isConfigReady.value && !runValidationMessage.value)
 const derivedWorkspaceFeedback = computed<{
   text: string
   tone: WorkspaceFeedbackTone
@@ -487,7 +488,13 @@ function findLastAbortLine(debugLines: string[]): string | null {
         <p v-if="lastAppliedTemplate" class="placeholder-note">
           最近一次触发运行的模板：{{ lastAppliedTemplate.meta.title }}
         </p>
-        <PracticePlaygroundResultPanel :run-state="runState" @clear="handleClearResult" />
+        <PracticePlaygroundResultPanel
+          :can-rerun="canRun"
+          :is-running="runState.status === 'running'"
+          :run-state="runState"
+          @clear="handleClearResult"
+          @rerun="handleRun"
+        />
       </article>
     </section>
 
