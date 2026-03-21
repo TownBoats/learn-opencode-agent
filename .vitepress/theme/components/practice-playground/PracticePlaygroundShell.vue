@@ -32,6 +32,7 @@ import {
 } from './practicePlaygroundTypes'
 import {
   clearPracticePlaygroundConfig,
+  getPracticePlaygroundStoredConfigUpdatedAt,
   hasPracticePlaygroundStoredConfig,
   loadPracticePlaygroundConfig,
   savePracticePlaygroundConfig,
@@ -52,6 +53,7 @@ type WorkspaceFeedbackTone = 'neutral' | 'running' | 'success' | 'warning' | 'er
 const selectedChapterId = ref<PracticePlaygroundChapterId>(DEFAULT_PRACTICE_PLAYGROUND_CHAPTER_ID)
 const playgroundConfig = ref<PracticePlaygroundConfig>(createDefaultPracticePlaygroundConfig())
 const hasStoredConfig = ref(false)
+const storedConfigUpdatedAt = ref<number | null>(null)
 const settingsModalOpen = ref(false)
 const runState = ref<PracticePlaygroundRunState>(createInitialPracticePlaygroundRunState())
 const workspaceFeedback = ref<{
@@ -76,6 +78,16 @@ const currentModelLabel = computed(() => playgroundConfig.value.model.trim() || 
 const currentChapterLabel = computed(() => `${selectedChapter.value.number} · ${selectedChapter.value.title}`)
 const currentTemplateLabel = computed(() => editorState.value.template.meta.title || '当前模板')
 const configSourceLabel = computed(() => hasStoredConfig.value ? '浏览器本地存储' : '当前会话')
+const configSavedAtLabel = computed(() => {
+  if (!hasStoredConfig.value || storedConfigUpdatedAt.value === null) return '未保存到本地'
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(storedConfigUpdatedAt.value)
+})
 const hasApiKey = computed(() => Boolean(playgroundConfig.value.apiKey.trim()))
 const isConfigReady = computed(() => {
   return Boolean(
@@ -293,6 +305,7 @@ function handleSettingsSave(nextConfig: PracticePlaygroundConfig) {
   playgroundConfig.value = nextConfig
   const didPersist = savePracticePlaygroundConfig(nextConfig)
   hasStoredConfig.value = didPersist
+  storedConfigUpdatedAt.value = didPersist ? getPracticePlaygroundStoredConfigUpdatedAt() : null
   workspaceFeedback.value = didPersist
     ? {
         text: '配置已保存到当前浏览器。',
@@ -309,6 +322,7 @@ function handleSettingsClear() {
   const didClear = clearPracticePlaygroundConfig()
   playgroundConfig.value = createDefaultPracticePlaygroundConfig()
   hasStoredConfig.value = false
+  storedConfigUpdatedAt.value = null
   workspaceFeedback.value = didClear
     ? {
         text: '已清空本地配置并恢复默认值。',
@@ -392,6 +406,7 @@ function handleRun() {
 onMounted(() => {
   playgroundConfig.value = loadPracticePlaygroundConfig()
   hasStoredConfig.value = hasPracticePlaygroundStoredConfig()
+  storedConfigUpdatedAt.value = getPracticePlaygroundStoredConfigUpdatedAt()
   syncChapterFromLocation()
   if (inBrowser) {
     window.addEventListener('popstate', handlePopState)
@@ -496,6 +511,7 @@ function findLastAbortLine(debugLines: string[]): string | null {
         <PracticePlaygroundResultPanel
           :can-rerun="canRun"
           :chapter-label="currentChapterLabel"
+          :config-saved-at-label="configSavedAtLabel"
           :config-source-label="configSourceLabel"
           :is-running="runState.status === 'running'"
           :run-state="runState"

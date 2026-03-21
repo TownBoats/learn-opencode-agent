@@ -56,6 +56,20 @@ export function hasPracticePlaygroundStoredConfig(): boolean {
   }
 }
 
+export function getPracticePlaygroundStoredConfigUpdatedAt(): number | null {
+  const storage = getStorageSafely()
+  if (!storage) return null
+
+  try {
+    const raw = storage.getItem(PRACTICE_PLAYGROUND_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<PracticePlaygroundStoredConfig>
+    return typeof parsed.updatedAt === 'number' ? parsed.updatedAt : null
+  } catch {
+    return null
+  }
+}
+
 export function savePracticePlaygroundConfig(config: PracticePlaygroundConfig): boolean {
   const storage = getStorageSafely()
   if (!storage) return false
