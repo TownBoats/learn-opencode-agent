@@ -112,6 +112,12 @@ const copyOutputButtonTitle = computed(() => (
 const copyDebugButtonTitle = computed(() => (
   hasDebugContent.value ? '复制当前调试信息。' : '当前还没有可复制的调试信息。'
 ))
+const scrollOutputButtonTitle = computed(() => (
+  hasRunnableOutput.value ? '快速滚动到输出底部。' : '当前还没有可滚动的输出内容。'
+))
+const scrollDebugButtonTitle = computed(() => (
+  hasDebugContent.value ? '快速滚动到调试日志底部。' : '当前还没有可滚动的调试内容。'
+))
 const canToggleOutputExpanded = computed(() => props.runState.outputText.trim().length > 0)
 const canToggleDebugExpanded = computed(() => debugEntries.value.length > 0)
 const outputToggleLabel = computed(() => (outputExpanded.value ? '收起输出' : '展开输出'))
@@ -252,6 +258,14 @@ function stopLiveDurationTimer() {
   }
 }
 
+function scrollPanelToBottom(target: HTMLElement | null) {
+  if (!target) return
+  target.scrollTo({
+    top: target.scrollHeight,
+    behavior: 'smooth',
+  })
+}
+
 function toggleOutputExpanded() {
   if (!canToggleOutputExpanded.value) return
   outputExpanded.value = !outputExpanded.value
@@ -260,6 +274,16 @@ function toggleOutputExpanded() {
 function toggleDebugExpanded() {
   if (!canToggleDebugExpanded.value) return
   debugExpanded.value = !debugExpanded.value
+}
+
+function handleScrollOutputToBottom() {
+  if (!hasRunnableOutput.value) return
+  scrollPanelToBottom(outputPanelRef.value)
+}
+
+function handleScrollDebugToBottom() {
+  if (!hasDebugContent.value) return
+  scrollPanelToBottom(debugListRef.value)
 }
 
 async function handleCopySummary() {
@@ -413,6 +437,15 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           <button
             type="button"
             class="ghost-button"
+            :title="scrollOutputButtonTitle"
+            :disabled="!hasRunnableOutput"
+            @click="handleScrollOutputToBottom"
+          >
+            回到底部
+          </button>
+          <button
+            type="button"
+            class="ghost-button"
             :title="copyOutputButtonTitle"
             :disabled="!hasRunnableOutput"
             @click="handleCopyOutput"
@@ -442,6 +475,15 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
             @click="toggleDebugExpanded"
           >
             {{ debugToggleLabel }}
+          </button>
+          <button
+            type="button"
+            class="ghost-button"
+            :title="scrollDebugButtonTitle"
+            :disabled="!hasDebugContent"
+            @click="handleScrollDebugToBottom"
+          >
+            回到底部
           </button>
           <button
             type="button"
