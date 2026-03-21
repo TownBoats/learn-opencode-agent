@@ -82,14 +82,14 @@ const statusMeta = computed(() => {
 })
 const outputSummary = computed(() => {
   if (props.runState.outputText.trim()) return props.runState.outputText
-  if (props.runState.status === 'error') return '本次运行失败，请查看下方调试信息。'
-  if (props.runState.status === 'running') return '请求进行中，等待模型返回…'
-  return '尚未运行。先在顶部确认配置，再点击“运行”查看结果。'
+  if (props.runState.status === 'error') return '运行失败，查看下方调试。'
+  if (props.runState.status === 'running') return '请求已发出，等待返回…'
+  return '尚未运行。完成配置后点击“运行”。'
 })
 const debugLines = computed(() => {
   if (props.runState.debugLines.length > 0) return props.runState.debugLines
-  if (props.runState.status === 'running') return ['请求已发出，等待返回调试信息。']
-  return ['等待运行。发起请求后，这里会显示适配、工具调用和中断原因。']
+  if (props.runState.status === 'running') return ['等待调试日志返回。']
+  return ['尚未运行，调试日志会显示在这里。']
 })
 const debugEntries = computed(() =>
   debugLines.value.map((line, index) => ({
@@ -141,14 +141,18 @@ const debugToggleTitle = computed(() => (
 ))
 const outputStatsLabel = computed(() => {
   const trimmed = props.runState.outputText.trim()
-  if (!trimmed) return '暂无输出'
+  if (!trimmed) {
+    return props.runState.status === 'running' ? '等待输出' : '暂无输出'
+  }
 
   const lineCount = trimmed.split('\n').length
   return `${trimmed.length} 字 / ${lineCount} 行`
 })
 const debugStatsLabel = computed(() => {
   const totalLines = debugEntries.value.length + (props.runState.errorMessage.trim() ? 1 : 0)
-  if (!totalLines) return '暂无调试'
+  if (!totalLines) {
+    return props.runState.status === 'running' ? '等待日志' : '暂无调试'
+  }
   return `${totalLines} 条日志`
 })
 const outputCardClass = computed(() => [
