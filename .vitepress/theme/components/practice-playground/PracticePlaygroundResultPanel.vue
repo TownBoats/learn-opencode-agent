@@ -27,6 +27,7 @@ const debugCardRef = ref<HTMLElement | null>(null)
 const outputPanelRef = ref<HTMLElement | null>(null)
 const debugListRef = ref<HTMLElement | null>(null)
 const liveDurationMs = ref<number | null>(null)
+const summaryDetailsExpanded = ref(false)
 const outputExpanded = ref(false)
 const debugExpanded = ref(false)
 const outputFlashTone = ref<'success' | ''>('')
@@ -176,6 +177,9 @@ const activeToastMessage = computed(() => (
 const activeToastTone = computed<'success' | 'warning'>(() => {
   return activeToast.value?.tone || 'success'
 })
+const summaryToggleLabel = computed(() => (
+  summaryDetailsExpanded.value ? '收起更多摘要' : '查看更多摘要'
+))
 const summaryText = computed(() => [
   `章节：${props.chapterLabel}`,
   `模板：${props.templateLabel}`,
@@ -379,6 +383,10 @@ function toggleDebugExpanded() {
   debugExpanded.value = !debugExpanded.value
 }
 
+function toggleSummaryDetails() {
+  summaryDetailsExpanded.value = !summaryDetailsExpanded.value
+}
+
 function handleScrollOutputToBottom() {
   if (!hasRunnableOutput.value) return
   scrollPanelToBottom(outputPanelRef.value)
@@ -480,39 +488,47 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       </div>
 
       <dl class="summary-grid">
-        <div>
+        <div class="summary-item">
           <dt>章节</dt>
           <dd>{{ chapterLabel }}</dd>
         </div>
-        <div>
+        <div class="summary-item">
           <dt>模板</dt>
           <dd>{{ templateLabel }}</dd>
         </div>
-        <div>
+        <div class="summary-item">
           <dt>配置来源</dt>
           <dd>{{ configSourceLabel }}</dd>
         </div>
-        <div>
+        <div class="summary-item">
           <dt>最近保存</dt>
           <dd>{{ configSavedAtLabel }}</dd>
         </div>
-        <div>
+        <div :class="['summary-item', 'summary-item-secondary', { visible: summaryDetailsExpanded }]">
           <dt>模型</dt>
           <dd>{{ configSummary?.model || '尚未运行' }}</dd>
         </div>
-        <div>
+        <div :class="['summary-item', 'summary-item-secondary', { visible: summaryDetailsExpanded }]">
           <dt>接口地址</dt>
           <dd>{{ configSummary?.baseURL || '尚未运行' }}</dd>
         </div>
-        <div>
+        <div :class="['summary-item', 'summary-item-secondary', { visible: summaryDetailsExpanded }]">
           <dt>密钥状态</dt>
           <dd>{{ apiKeyStatusLabel }}</dd>
         </div>
-        <div>
+        <div :class="['summary-item', 'summary-item-secondary', { visible: summaryDetailsExpanded }]">
           <dt>耗时</dt>
           <dd>{{ durationLabel }}</dd>
         </div>
       </dl>
+      <button
+        type="button"
+        class="summary-toggle action-button action-button-utility"
+        :aria-expanded="summaryDetailsExpanded"
+        @click="toggleSummaryDetails"
+      >
+        {{ summaryToggleLabel }}
+      </button>
     </article>
 
     <article ref="outputCardRef" :class="outputCardClass">
@@ -824,7 +840,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   gap: 12px;
 }
 
-.summary-grid div {
+.summary-item {
   min-width: 0;
 }
 
@@ -836,6 +852,10 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 .summary-grid dd {
   margin: 6px 0 0;
   word-break: break-word;
+}
+
+.summary-toggle {
+  display: none;
 }
 
 .action-button {
@@ -1006,6 +1026,20 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 }
 
 @media (max-width: 520px) {
+  .summary-item-secondary {
+    display: none;
+  }
+
+  .summary-item-secondary.visible {
+    display: block;
+  }
+
+  .summary-toggle {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+  }
+
   .summary-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
