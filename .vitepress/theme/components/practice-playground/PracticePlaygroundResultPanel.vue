@@ -11,6 +11,33 @@ const outputPanelRef = ref<HTMLElement | null>(null)
 let lastOutputLength = 0
 
 const configSummary = computed(() => props.runState.configSnapshot)
+const statusMeta = computed(() => {
+  if (props.runState.status === 'running') {
+    return {
+      label: '运行中',
+      tone: 'running',
+    }
+  }
+
+  if (props.runState.status === 'success') {
+    return {
+      label: '已完成',
+      tone: 'success',
+    }
+  }
+
+  if (props.runState.status === 'error') {
+    return {
+      label: '运行失败',
+      tone: 'error',
+    }
+  }
+
+  return {
+    label: '未开始',
+    tone: 'idle',
+  }
+})
 const outputSummary = computed(() => {
   if (props.runState.outputText.trim()) return props.runState.outputText
   if (props.runState.status === 'error') return '本次运行失败，请查看下方调试信息。'
@@ -83,7 +110,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
     <article class="result-card summary-card">
       <div class="summary-header">
         <h2>请求摘要</h2>
-        <span class="status-chip">{{ runState.status }}</span>
+        <span :class="['status-chip', statusMeta.tone]">{{ statusMeta.label }}</span>
       </div>
 
       <dl class="summary-grid">
@@ -180,7 +207,28 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-divider);
   font-size: 12px;
-  text-transform: uppercase;
+}
+
+.status-chip.idle {
+  color: var(--vp-c-text-2);
+}
+
+.status-chip.running {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 40%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-brand-1) 10%, var(--vp-c-bg));
+  color: var(--vp-c-brand-1);
+}
+
+.status-chip.success {
+  border-color: color-mix(in srgb, #16a34a 38%, var(--vp-c-divider));
+  background: color-mix(in srgb, #16a34a 10%, var(--vp-c-bg));
+  color: #166534;
+}
+
+.status-chip.error {
+  border-color: color-mix(in srgb, #ef4444 38%, var(--vp-c-divider));
+  background: color-mix(in srgb, #ef4444 10%, var(--vp-c-bg));
+  color: #b42318;
 }
 
 .summary-grid {

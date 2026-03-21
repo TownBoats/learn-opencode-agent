@@ -51,7 +51,7 @@ const playgroundConfig = ref<PracticePlaygroundConfig>(createDefaultPracticePlay
 const settingsModalOpen = ref(false)
 const runState = ref<PracticePlaygroundRunState>(createInitialPracticePlaygroundRunState())
 const configStatusMessage = ref('')
-const workspaceMessage = ref('你可以在左侧切换结构化编辑和原始 JSON，当前右侧结果区仍是占位实现。')
+const workspaceMessage = ref('在左侧调整请求模板后，可以直接在右侧查看输出和调试信息。')
 const editorViewMode = ref<PracticePlaygroundTemplateViewMode>('structured')
 
 const selectedChapter = computed(() => getPracticePlaygroundChapterById(selectedChapterId.value))
@@ -144,6 +144,7 @@ function handleChapterSelect(id: PracticePlaygroundChapterId) {
 
 function handlePopState() {
   syncChapterFromLocation()
+  workspaceMessage.value = `已切换到 ${selectedChapter.value.playground.title}。`
 }
 
 function handleOpenSettings() {
@@ -183,7 +184,7 @@ function handleEditorViewModeUpdate(nextMode: PracticePlaygroundTemplateViewMode
 function handleResetTemplate() {
   runnerRef.value?.reset()
   syncEditorStateForChapter(selectedChapterId.value)
-  workspaceMessage.value = `已重置 ${selectedChapter.value.playground.title} 的模板草稿。`
+  workspaceMessage.value = `已恢复 ${selectedChapter.value.playground.title} 的默认模板。`
 }
 
 function handleRunStateUpdate(nextState: PracticePlaygroundRunState) {
@@ -211,7 +212,6 @@ function handleRun() {
     config: { ...playgroundConfig.value },
     runnerInput: runnerInput.value,
   })
-  workspaceMessage.value = `已开始运行 ${selectedChapter.value.playground.title}。`
 }
 
 onMounted(() => {
