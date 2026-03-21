@@ -8,6 +8,7 @@ const props = defineProps<{
   modelLabel: string
   hasApiKey: boolean
   isConfigReady: boolean
+  isRunBlocked: boolean
   isRunning: boolean
 }>()
 
@@ -56,7 +57,7 @@ const emit = defineEmits<{
       <button
         type="button"
         class="run-button"
-        :disabled="isRunning"
+        :disabled="isRunning || isRunBlocked"
         @click="emit('run')"
       >
         {{ isRunning ? '运行中...' : '运行' }}

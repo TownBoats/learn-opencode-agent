@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { inBrowser } from 'vitepress'
+import PracticePlaygroundEditor from './PracticePlaygroundEditor.vue'
 import PracticePlaygroundHeader from './PracticePlaygroundHeader.vue'
 import PracticePlaygroundSettingsModal from './PracticePlaygroundSettingsModal.vue'
 import {
@@ -15,9 +16,11 @@ import type {
   PracticePlaygroundConfig,
   PracticePlaygroundRunState,
   PracticePlaygroundTemplate,
+  PracticePlaygroundTemplateViewMode,
   PracticeTemplateEditorState,
 } from './practicePlaygroundTypes'
 import {
+  clonePracticePlaygroundTemplate,
   createDefaultPracticePlaygroundConfig,
   createInitialPracticePlaygroundRunState,
   createPracticeTemplateEditorState,
@@ -33,9 +36,11 @@ const playgroundConfig = ref<PracticePlaygroundConfig>(createDefaultPracticePlay
 const settingsModalOpen = ref(false)
 const runState = ref<PracticePlaygroundRunState>(createInitialPracticePlaygroundRunState())
 const configStatusMessage = ref('')
-const workspaceMessage = ref('Task 2 仅完成工作台骨架，编辑器与结果面板将在后续任务接入。')
+const workspaceMessage = ref('你可以在左侧切换结构化编辑和原始 JSON，当前右侧结果区仍是占位实现。')
+const editorViewMode = ref<PracticePlaygroundTemplateViewMode>('structured')
 
 const selectedChapter = computed(() => getPracticePlaygroundChapterById(selectedChapterId.value))
+const defaultTemplate = computed(() => createPracticePlaygroundTemplate(selectedChapter.value))
 
 const editorState = ref<PracticeTemplateEditorState>(
   createPracticeTemplateEditorState(createPracticePlaygroundTemplate(selectedChapter.value)),
@@ -52,14 +57,22 @@ const isConfigReady = computed(() => {
   )
 })
 
-function cloneTemplate(template: PracticePlaygroundTemplate): PracticePlaygroundTemplate {
-  return JSON.parse(JSON.stringify(template)) as PracticePlaygroundTemplate
-}
+const runValidationMessage = computed(() => {
+  if (editorState.value.jsonError) {
+    return 'JSON 当前存在解析错误，请先修复后再运行。'
+  }
+
+  const lockedToolIssue = getLockedToolIssue(editorState.value.template, defaultTemplate.value)
+  if (lockedToolIssue) return lockedToolIssue
+
+  return ''
+})
 
 function syncEditorStateForChapter(chapterId: PracticePlaygroundChapterId) {
   const chapter = getPracticePlaygroundChapterById(chapterId)
   const template = createPracticePlaygroundTemplate(chapter)
   editorState.value = createPracticeTemplateEditorState(template)
+  editorViewMode.value = 'structured'
   lastAppliedTemplate.value = null
 }
 
@@ -135,6 +148,14 @@ function handleSettingsClear() {
   settingsModalOpen.value = false
 }
 
+function handleEditorStateUpdate(nextState: PracticeTemplateEditorState) {
+  editorState.value = nextState
+}
+
+function handleEditorViewModeUpdate(nextMode: PracticePlaygroundTemplateViewMode) {
+  editorViewMode.value = nextMode
+}
+
 function handleResetTemplate() {
   syncEditorStateForChapter(selectedChapterId.value)
   runState.value = createInitialPracticePlaygroundRunState()
@@ -142,8 +163,19 @@ function handleResetTemplate() {
 }
 
 function handleRun() {
+  if (runValidationMessage.value) {
+    runState.value = {
+      ...runState.value,
+      status: 'error',
+      errorMessage: runValidationMessage.value,
+      debugLines: [...runState.value.debugLines, `运行前校验失败：${runValidationMessage.value}`],
+    }
+    workspaceMessage.value = runValidationMessage.value
+    return
+  }
+
   const startedAt = Date.now()
-  const appliedTemplate = cloneTemplate(editorState.value.template)
+  const appliedTemplate = clonePracticePlaygroundTemplate(editorState.value.template)
   const nextRequestToken = runState.value.requestToken + 1
 
   lastAppliedTemplate.value = appliedTemplate
@@ -162,7 +194,7 @@ function handleRun() {
       hasApiKey: hasApiKey.value,
     },
   }
-  workspaceMessage.value = '运行按钮事件已接通；真实编辑器与结果面板将在后续任务接入。'
+  workspaceMessage.value = '编辑器链路已接通；真实 runner 与结果面板将在后续任务接入。'
 }
 
 onMounted(() => {
@@ -178,6 +210,30 @@ onUnmounted(() => {
     window.removeEventListener('popstate', handlePopState)
   }
 })
+
+function getLockedToolIssue(
+  currentTemplate: PracticePlaygroundTemplate,
+  chapterTemplate: PracticePlaygroundTemplate,
+): string {
+  for (const [index, tool] of chapterTemplate.tools.entries()) {
+    if (!tool.locked) continue
+
+    const currentTool = currentTemplate.tools[index]
+    if (!currentTool) {
+      return `本章本地工具实现固定，不能删除锁定工具 ${tool.function.name}。`
+    }
+
+    if (currentTool.type !== tool.type) {
+      return `本章本地工具实现固定，不能修改锁定工具 ${tool.function.name} 的类型。`
+    }
+
+    if (currentTool.function.name !== tool.function.name) {
+      return `本章本地工具实现固定，不能修改锁定工具 ${tool.function.name} 的工具名。`
+    }
+  }
+
+  return ''
+}
 </script>
 
 <template>
@@ -189,6 +245,7 @@ onUnmounted(() => {
       :model-label="currentModelLabel"
       :has-api-key="hasApiKey"
       :is-config-ready="isConfigReady"
+      :is-run-blocked="Boolean(runValidationMessage)"
       :is-running="runState.status === 'running'"
       @select-chapter="handleChapterSelect"
       @open-settings="handleOpenSettings"
@@ -205,27 +262,14 @@ onUnmounted(() => {
         <p>
           当前章节：{{ selectedChapter.number }} · {{ selectedChapter.title }}
         </p>
-        <p>
-          本任务先只搭工作台骨架。下一步会在这里接入结构化编辑和原始 JSON 双视图。
-        </p>
-        <dl class="meta-grid">
-          <div>
-            <dt>system</dt>
-            <dd>{{ editorState.template.system || '当前模板未设置 system' }}</dd>
-          </div>
-          <div>
-            <dt>messages</dt>
-            <dd>{{ editorState.template.messages.length }} 条</dd>
-          </div>
-          <div>
-            <dt>tools</dt>
-            <dd>{{ editorState.template.tools.length }} 个</dd>
-          </div>
-          <div>
-            <dt>模板状态</dt>
-            <dd>{{ editorState.isDirty ? '有未保存改动' : '当前标签页草稿' }}</dd>
-          </div>
-        </dl>
+        <PracticePlaygroundEditor
+          :default-template="defaultTemplate"
+          :editor-state="editorState"
+          :view-mode="editorViewMode"
+          :run-validation-message="runValidationMessage"
+          @update:editor-state="handleEditorStateUpdate"
+          @update:view-mode="handleEditorViewModeUpdate"
+        />
       </article>
 
       <article class="workspace-pane result-pane">
@@ -302,27 +346,6 @@ onUnmounted(() => {
   color: var(--vp-c-text-2);
 }
 
-.meta-grid {
-  margin: 18px 0 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.meta-grid div {
-  min-width: 0;
-}
-
-.meta-grid dt {
-  font-size: 12px;
-  color: var(--vp-c-text-2);
-}
-
-.meta-grid dd {
-  margin: 6px 0 0;
-  word-break: break-word;
-}
-
 .result-split {
   display: grid;
   gap: 12px;
@@ -347,10 +370,6 @@ onUnmounted(() => {
 
 @media (max-width: 900px) {
   .workspace-main {
-    grid-template-columns: 1fr;
-  }
-
-  .meta-grid {
     grid-template-columns: 1fr;
   }
 }
