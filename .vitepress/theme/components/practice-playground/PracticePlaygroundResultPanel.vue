@@ -118,6 +118,18 @@ const outputToggleTitle = computed(() => (
 const debugToggleTitle = computed(() => (
   debugExpanded.value ? '恢复为紧凑调试视图。' : '展开调试区域，便于查看完整日志。'
 ))
+const outputStatsLabel = computed(() => {
+  const trimmed = props.runState.outputText.trim()
+  if (!trimmed) return '暂无输出'
+
+  const lineCount = trimmed.split('\n').length
+  return `${trimmed.length} 字 / ${lineCount} 行`
+})
+const debugStatsLabel = computed(() => {
+  const totalLines = debugEntries.value.length + (props.runState.errorMessage.trim() ? 1 : 0)
+  if (!totalLines) return '暂无调试'
+  return `${totalLines} 条日志`
+})
 const summaryText = computed(() => [
   `章节：${props.chapterLabel}`,
   `模板：${props.templateLabel}`,
@@ -315,7 +327,10 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 
     <article class="result-card output-card">
       <div class="card-header">
-        <h2>输出</h2>
+        <div class="card-title">
+          <h2>输出</h2>
+          <span class="card-meta">{{ outputStatsLabel }}</span>
+        </div>
         <div class="card-actions">
           <button
             type="button"
@@ -363,7 +378,10 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 
     <article class="result-card debug-card">
       <div class="card-header">
-        <h2>调试</h2>
+        <div class="card-title">
+          <h2>调试</h2>
+          <span class="card-meta">{{ debugStatsLabel }}</span>
+        </div>
         <div class="card-actions">
           <button
             type="button"
@@ -443,6 +461,16 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 .card-header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.card-title {
+  display: grid;
+  gap: 4px;
+}
+
+.card-meta {
+  font-size: 12px;
+  color: var(--vp-c-text-2);
 }
 
 .card-actions {
