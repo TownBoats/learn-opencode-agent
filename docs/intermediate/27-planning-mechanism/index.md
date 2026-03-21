@@ -56,6 +56,24 @@ Adaptive Planning
   -> 先有计划，但允许中途重算剩余步骤
 ```
 
+<PlanningTreeDemo :tasks="[
+  {
+    id: 'refactor', title: '重构认证模块', description: '分离关注点，增加可测试性',
+    status: 'pending', priority: 'p0', estimatedTokens: 150, dependsOn: [],
+    children: [
+      { id: 'iface', title: '定义接口与类型', description: 'AuthService + UserCredentials', status: 'pending', priority: 'p0', estimatedTokens: 300, dependsOn: [] },
+      { id: 'impl', title: '实现核心逻辑', description: 'login / logout / refreshToken', status: 'pending', priority: 'p0', estimatedTokens: 520, dependsOn: ['iface'] },
+      { id: 'test', title: '单元测试', description: '覆盖主路径和异常路径', status: 'pending', priority: 'p1', estimatedTokens: 380, dependsOn: ['impl'] }
+    ]
+  },
+  {
+    id: 'docs', title: '更新 API 文档', description: '同步接口变更说明', status: 'pending', priority: 'p2', estimatedTokens: 180, dependsOn: ['iface'], children: []
+  },
+  {
+    id: 'ci', title: 'CI 流程验证', description: '确认测试在 CI 中通过', status: 'pending', priority: 'p1', estimatedTokens: 120, dependsOn: ['test'], children: []
+  }
+]" :playSpeed="1200" />
+
 ### 27.1 ReAct 的问题不是不聪明，而是不保留全局结构
 
 ReAct 的本质是局部最优：当前看到什么，就处理什么。这个模式在“查天气”“算价格”“找一个文件”这种任务上很高效，但对多步骤任务很容易失控。

@@ -57,6 +57,20 @@ system prompt
 拼：最后如何组装成 messages
 ```
 
+<ContextEngineeringExtended
+  :candidates="[
+    { id: 'sys', label: 'System Prompt', type: 'conversation', relevanceScore: 0.99, recencyScore: 1.0, tokens: 450, preview: '你是一个专业代码助手...' },
+    { id: 'cur', label: 'auth/service.ts（当前文件）', type: 'file', relevanceScore: 0.95, recencyScore: 0.9, tokens: 820, preview: 'export class AuthService {' },
+    { id: 'hist', label: '最近5轮对话', type: 'conversation', relevanceScore: 0.82, recencyScore: 0.95, tokens: 640, preview: 'user: 帮我加类型...' },
+    { id: 'dep', label: 'auth/types.ts（依赖）', type: 'file', relevanceScore: 0.75, recencyScore: 0.7, tokens: 210, preview: 'export interface UserCredentials' },
+    { id: 'test', label: 'auth/service.test.ts', type: 'file', relevanceScore: 0.60, recencyScore: 0.5, tokens: 380, preview: 'describe(AuthService)...' },
+    { id: 'mem', label: '用户偏好记忆', type: 'memory', relevanceScore: 0.45, recencyScore: 0.3, tokens: 120, preview: '偏好函数式风格...' },
+    { id: 'rag', label: 'JWT 最佳实践（RAG）', type: 'document', relevanceScore: 0.40, recencyScore: 0.1, tokens: 560, preview: 'JWT token 过期策略...' },
+    { id: 'tool', label: '上一次 git diff 输出', type: 'tool_result', relevanceScore: 0.35, recencyScore: 0.85, tokens: 290, preview: '+  async login(cred: UserCredentials)' }
+  ]"
+  :tokenBudget="2000"
+/>
+
 ### 28.1 选：先过滤，再谈组装
 
 示例里的 `filter_by_relevance()` 和 `select_relevant_history()` 都在处理同一个问题：**不是所有拿到的信息都值得保留。**

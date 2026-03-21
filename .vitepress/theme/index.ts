@@ -31,6 +31,14 @@ import FunctionCallingCss from './components/animations/css/FunctionCallingCss.v
 import MultiAgentCollab from './components/animations/lottie/MultiAgentCollab.vue'
 import MemorySystem from './components/animations/lottie/MemorySystem.vue'
 import MemorySystemCss from './components/animations/css/MemorySystemCss.vue'
+import RagAccuracyDemo from './components/RagAccuracyDemo.vue'
+import MultiAgentWorkflowDetailed from './components/MultiAgentWorkflowDetailed.vue'
+import PlanningTreeDemo from './components/PlanningTreeDemo.vue'
+import ContextEngineeringExtended from './components/ContextEngineeringExtended.vue'
+import PromptDesignStudio from './components/PromptDesignStudio.vue'
+import ProductionArchitectureDiagram from './components/ProductionArchitectureDiagram.vue'
+import SecurityBoundaryDemo from './components/SecurityBoundaryDemo.vue'
+import CostOptimizationDashboard from './components/CostOptimizationDashboard.vue'
 import './custom.css'
 
 const globalComponents = [
@@ -64,6 +72,14 @@ const globalComponents = [
   ['MultiAgentCollab', MultiAgentCollab],
   ['MemorySystem', MemorySystem],
   ['MemorySystemCss', MemorySystemCss],
+  ['RagAccuracyDemo', RagAccuracyDemo],
+  ['MultiAgentWorkflowDetailed', MultiAgentWorkflowDetailed],
+  ['PlanningTreeDemo', PlanningTreeDemo],
+  ['ContextEngineeringExtended', ContextEngineeringExtended],
+  ['PromptDesignStudio', PromptDesignStudio],
+  ['ProductionArchitectureDiagram', ProductionArchitectureDiagram],
+  ['SecurityBoundaryDemo', SecurityBoundaryDemo],
+  ['CostOptimizationDashboard', CostOptimizationDashboard],
 ] as const
 
 export default {

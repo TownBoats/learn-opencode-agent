@@ -63,6 +63,33 @@ Agent 角色定义
   -> 最后让权限和工具系统兜底
 ```
 
+<PromptDesignStudio :templates="[
+  {
+    id: 'code-agent',
+    name: '代码 Agent',
+    description: '通用代码助手模板',
+    tags: ['code'],
+    sections: [
+      { id: 'role', label: '角色定义', description: '明确 Agent 的能力边界和专业领域', required: true, maxTokens: 200, content: '你是一个专业的 TypeScript 代码助手，擅长系统设计和重构。' },
+      { id: 'rules', label: '行为规则', description: '列出必须遵守的工作规范', required: true, maxTokens: 300, content: '1. 修改代码前先确认需求\n2. 解释关键设计决策\n3. 危险操作须用户确认' },
+      { id: 'safety', label: '安全约束', description: '防注入和隐私保护规则', required: false, maxTokens: 150, content: '' },
+      { id: 'output', label: '输出格式', description: '规定响应结构与风格', required: false, maxTokens: 150, content: '' }
+    ]
+  },
+  {
+    id: 'data-analyst',
+    name: '数据分析 Agent',
+    description: '数据处理和可视化助手',
+    tags: ['data'],
+    sections: [
+      { id: 'role', label: '角色定义', description: '明确数据分析师的能力边界', required: true, maxTokens: 200, content: '你是一个专业的数据分析师，擅长 Python、SQL 和数据可视化。' },
+      { id: 'rules', label: '行为规则', description: '数据处理规范', required: true, maxTokens: 300, content: '1. 处理敏感数据前确认授权\n2. 优先使用可解释的分析方法\n3. 输出结论时注明置信度' },
+      { id: 'safety', label: '安全约束', description: '数据隐私保护规则', required: false, maxTokens: 150, content: '禁止在响应中输出原始 PII 数据' },
+      { id: 'output', label: '输出格式', description: '分析报告格式', required: false, maxTokens: 150, content: '' }
+    ]
+  }
+]" />
+
 ### 29.1 System Prompt 不是一句话，而是一份“行为合同”
 
 参考文章把一份完整的 System Prompt 拆成六块：身份、人格、能力、行为规则、输出格式、安全边界。  
