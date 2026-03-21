@@ -19,6 +19,8 @@ const emit = defineEmits<{
 const outputCopyStatus = ref('')
 const debugCopyStatus = ref('')
 const summaryCopyStatus = ref('')
+const outputScrollStatus = ref('')
+const debugScrollStatus = ref('')
 const outputCardRef = ref<HTMLElement | null>(null)
 const debugCardRef = ref<HTMLElement | null>(null)
 const outputPanelRef = ref<HTMLElement | null>(null)
@@ -159,6 +161,17 @@ const debugCardClass = computed(() => [
     'flash-error': debugFlashTone.value === 'error',
   },
 ])
+const activeToastMessage = computed(() => (
+  summaryCopyStatus.value
+  || outputCopyStatus.value
+  || debugCopyStatus.value
+  || outputScrollStatus.value
+  || debugScrollStatus.value
+))
+const activeToastTone = computed<'success' | 'warning'>(() => {
+  if (!activeToastMessage.value) return 'success'
+  return /失败|不支持/.test(activeToastMessage.value) ? 'warning' : 'success'
+})
 const summaryText = computed(() => [
   `章节：${props.chapterLabel}`,
   `模板：${props.templateLabel}`,
@@ -197,14 +210,22 @@ watch(
 )
 
 watch(
-  () => [summaryCopyStatus.value, outputCopyStatus.value, debugCopyStatus.value],
-  ([summaryValue, outputValue, debugValue]) => {
-    const value = summaryValue || outputValue || debugValue
+  () => [
+    summaryCopyStatus.value,
+    outputCopyStatus.value,
+    debugCopyStatus.value,
+    outputScrollStatus.value,
+    debugScrollStatus.value,
+  ],
+  ([summaryValue, outputValue, debugValue, outputScrollValue, debugScrollValue]) => {
+    const value = summaryValue || outputValue || debugValue || outputScrollValue || debugScrollValue
     if (!value) return
     const timer = window.setTimeout(() => {
       summaryCopyStatus.value = ''
       outputCopyStatus.value = ''
       debugCopyStatus.value = ''
+      outputScrollStatus.value = ''
+      debugScrollStatus.value = ''
     }, 1800)
     return () => window.clearTimeout(timer)
   },
@@ -338,11 +359,13 @@ function toggleDebugExpanded() {
 function handleScrollOutputToBottom() {
   if (!hasRunnableOutput.value) return
   scrollPanelToBottom(outputPanelRef.value)
+  outputScrollStatus.value = '已定位到输出底部。'
 }
 
 function handleScrollDebugToBottom() {
   if (!hasDebugContent.value) return
   scrollPanelToBottom(debugListRef.value)
+  debugScrollStatus.value = '已定位到调试底部。'
 }
 
 async function handleCopySummary() {
@@ -407,6 +430,15 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 
 <template>
   <section :class="['result-panel', { expanded: hasExpandedPanel }]">
+    <div
+      v-if="activeToastMessage"
+      :class="['feedback-toast', activeToastTone]"
+      role="status"
+      aria-live="polite"
+    >
+      {{ activeToastMessage }}
+    </div>
+
     <article class="result-card summary-card">
       <div class="summary-header">
         <h2>请求摘要</h2>
@@ -456,7 +488,6 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           <dd>{{ durationLabel }}</dd>
         </div>
       </dl>
-      <p v-if="summaryCopyStatus" class="copy-status" role="status" aria-live="polite">{{ summaryCopyStatus }}</p>
     </article>
 
     <article ref="outputCardRef" :class="outputCardClass">
@@ -516,7 +547,6 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       <pre ref="outputPanelRef" :class="['output-panel', { empty: !runState.outputText.trim(), expanded: outputExpanded }]">
         {{ outputSummary }}
       </pre>
-      <p v-if="outputCopyStatus" class="copy-status" role="status" aria-live="polite">{{ outputCopyStatus }}</p>
     </article>
 
     <article ref="debugCardRef" :class="debugCardClass">
@@ -565,13 +595,13 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           {{ entry.line }}
         </li>
       </ul>
-      <p v-if="debugCopyStatus" class="copy-status" role="status" aria-live="polite">{{ debugCopyStatus }}</p>
     </article>
   </section>
 </template>
 
 <style scoped>
 .result-panel {
+  position: relative;
   display: grid;
   gap: 12px;
   height: 100%;
@@ -581,6 +611,34 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 .result-panel.expanded {
   height: auto;
   grid-template-rows: auto auto auto;
+}
+
+.feedback-toast {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  max-width: min(320px, calc(100% - 24px));
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+  border: 1px solid var(--vp-c-divider);
+  background: color-mix(in srgb, var(--vp-c-bg) 96%, white);
+}
+
+.feedback-toast.success {
+  border-color: color-mix(in srgb, #16a34a 36%, var(--vp-c-divider));
+  background: color-mix(in srgb, #16a34a 10%, var(--vp-c-bg));
+  color: #166534;
+}
+
+.feedback-toast.warning {
+  border-color: color-mix(in srgb, #f59e0b 36%, var(--vp-c-divider));
+  background: color-mix(in srgb, #f59e0b 10%, var(--vp-c-bg));
+  color: #92400e;
 }
 
 .result-card {
@@ -757,12 +815,6 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   max-height: min(70vh, 960px);
 }
 
-.copy-status {
-  margin: 0;
-  font-size: 12px;
-  color: var(--vp-c-text-2);
-}
-
 .error-message {
   margin: 0;
   border-radius: 12px;
@@ -817,6 +869,13 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 @media (max-width: 700px) {
   .result-panel {
     grid-template-rows: auto auto auto;
+  }
+
+  .feedback-toast {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    max-width: none;
   }
 
   .result-card {
