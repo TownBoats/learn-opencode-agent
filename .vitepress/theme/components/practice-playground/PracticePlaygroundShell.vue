@@ -71,6 +71,8 @@ const editorState = ref<PracticeTemplateEditorState>(
 const lastAppliedTemplate = ref<PracticePlaygroundTemplate | null>(null)
 
 const currentModelLabel = computed(() => playgroundConfig.value.model.trim() || '未设置')
+const currentChapterLabel = computed(() => `${selectedChapter.value.number} · ${selectedChapter.value.title}`)
+const currentTemplateLabel = computed(() => editorState.value.template.meta.title || '当前模板')
 const hasApiKey = computed(() => Boolean(playgroundConfig.value.apiKey.trim()))
 const isConfigReady = computed(() => {
   return Boolean(
@@ -485,13 +487,12 @@ function findLastAbortLine(debugLines: string[]): string | null {
         <p :class="['workspace-feedback', currentWorkspaceFeedback.tone]">
           {{ currentWorkspaceFeedback.text }}
         </p>
-        <p v-if="lastAppliedTemplate" class="placeholder-note">
-          最近一次触发运行的模板：{{ lastAppliedTemplate.meta.title }}
-        </p>
         <PracticePlaygroundResultPanel
           :can-rerun="canRun"
+          :chapter-label="currentChapterLabel"
           :is-running="runState.status === 'running'"
           :run-state="runState"
+          :template-label="currentTemplateLabel"
           @clear="handleClearResult"
           @rerun="handleRun"
         />
@@ -585,10 +586,6 @@ function findLastAbortLine(debugLines: string[]): string | null {
   border-color: color-mix(in srgb, #ef4444 34%, var(--vp-c-divider));
   background: color-mix(in srgb, #ef4444 10%, var(--vp-c-bg));
   color: #b42318;
-}
-
-.placeholder-note {
-  color: var(--vp-c-text-1);
 }
 
 @media (max-width: 900px) {

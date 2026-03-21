@@ -4,8 +4,10 @@ import type { PracticePlaygroundRunState } from './practicePlaygroundTypes'
 
 const props = defineProps<{
   canRerun: boolean
+  chapterLabel: string
   isRunning: boolean
   runState: PracticePlaygroundRunState
+  templateLabel: string
 }>()
 const emit = defineEmits<{
   clear: []
@@ -162,6 +164,14 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       </div>
 
       <dl class="summary-grid">
+        <div>
+          <dt>章节</dt>
+          <dd>{{ chapterLabel }}</dd>
+        </div>
+        <div>
+          <dt>模板</dt>
+          <dd>{{ templateLabel }}</dd>
+        </div>
         <div>
           <dt>模型</dt>
           <dd>{{ configSummary?.model || '尚未运行' }}</dd>
