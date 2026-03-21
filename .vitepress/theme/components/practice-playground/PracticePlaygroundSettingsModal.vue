@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { PracticePlaygroundConfig } from './practicePlaygroundTypes'
 
 const props = defineProps<{
@@ -72,9 +72,25 @@ function handleStartReplacingApiKey() {
 function handleSave() {
   emit('save', {
     ...draft.value,
-    apiKey: isReplacingApiKey.value ? draft.value.apiKey : props.config.apiKey,
+    apiKey: (isReplacingApiKey.value ? draft.value.apiKey : props.config.apiKey).trim(),
+    baseURL: draft.value.baseURL.trim(),
+    model: draft.value.model.trim(),
   })
 }
+
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (!props.open) return
+  if (event.key !== 'Escape') return
+  emit('close')
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleWindowKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleWindowKeydown)
+})
 </script>
 
 <template>

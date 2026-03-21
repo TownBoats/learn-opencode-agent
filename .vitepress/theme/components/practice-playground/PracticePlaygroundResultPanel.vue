@@ -11,6 +11,7 @@ const outputPanelRef = ref<HTMLElement | null>(null)
 let lastOutputLength = 0
 
 const configSummary = computed(() => props.runState.configSnapshot)
+const hasRunnableOutput = computed(() => Boolean(props.runState.outputText.trim()))
 const statusMeta = computed(() => {
   if (props.runState.status === 'running') {
     return {
@@ -89,7 +90,7 @@ watch(
 )
 
 async function handleCopyOutput() {
-  const text = outputSummary.value
+  const text = props.runState.outputText.trim()
   if (!text.trim() || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
     copyStatus.value = '当前环境不支持复制输出。'
     return
@@ -144,7 +145,14 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
     <article class="result-card output-card">
       <div class="card-header">
         <h2>输出</h2>
-        <button type="button" class="ghost-button" @click="handleCopyOutput">复制输出</button>
+        <button
+          type="button"
+          class="ghost-button"
+          :disabled="!hasRunnableOutput"
+          @click="handleCopyOutput"
+        >
+          复制输出
+        </button>
       </div>
       <pre ref="outputPanelRef" :class="['output-panel', { empty: !runState.outputText.trim() }]">
         {{ outputSummary }}
@@ -268,6 +276,11 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   background: color-mix(in srgb, var(--vp-c-bg) 94%, white);
   cursor: pointer;
   font-weight: 600;
+}
+
+.ghost-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .output-panel {

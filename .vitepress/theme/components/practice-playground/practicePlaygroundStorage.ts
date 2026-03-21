@@ -25,9 +25,9 @@ function normalizeConfig(raw: unknown): PracticePlaygroundConfig {
   const payload = raw as Partial<PracticePlaygroundStoredConfig>
 
   return {
-    apiKey: typeof payload.apiKey === 'string' ? payload.apiKey : fallback.apiKey,
-    baseURL: typeof payload.baseURL === 'string' ? payload.baseURL : fallback.baseURL,
-    model: typeof payload.model === 'string' ? payload.model : fallback.model,
+    apiKey: typeof payload.apiKey === 'string' ? payload.apiKey.trim() : fallback.apiKey,
+    baseURL: typeof payload.baseURL === 'string' ? payload.baseURL.trim() : fallback.baseURL,
+    model: typeof payload.model === 'string' ? payload.model.trim() : fallback.model,
   }
 }
 
@@ -51,7 +51,7 @@ export function savePracticePlaygroundConfig(config: PracticePlaygroundConfig): 
 
   try {
     const storedConfig: PracticePlaygroundStoredConfig = {
-      ...config,
+      ...normalizeConfig(config),
       updatedAt: Date.now(),
     }
     storage.setItem(PRACTICE_PLAYGROUND_STORAGE_KEY, JSON.stringify(storedConfig))

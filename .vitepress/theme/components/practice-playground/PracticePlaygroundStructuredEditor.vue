@@ -233,19 +233,19 @@ function updateToolChoice(value: string) {
   <section class="structured-editor">
     <section class="editor-block">
       <div class="block-header">
-        <h3>System</h3>
+        <h3>系统提示词</h3>
       </div>
       <textarea
         class="field-textarea"
         :value="template.system"
-        placeholder="填写章节共享的 system 提示词"
+        placeholder="填写当前章节共享的 system 提示词"
         @input="updateSystem(($event.target as HTMLTextAreaElement).value)"
       />
     </section>
 
     <section class="editor-block">
       <div class="block-header">
-        <h3>Messages</h3>
+        <h3>消息列表</h3>
         <button type="button" class="ghost-button" @click="addMessage">新增消息</button>
       </div>
 
@@ -260,7 +260,7 @@ function updateToolChoice(value: string) {
         </div>
 
         <label class="field">
-          <span>role</span>
+          <span>角色（role）</span>
           <select
             :value="message.role"
             @change="
@@ -281,7 +281,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>content</span>
+          <span>内容（content）</span>
           <textarea
             class="field-textarea"
             :value="message.content"
@@ -296,7 +296,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label v-if="message.role === 'tool'" class="field">
-          <span>toolCallId</span>
+          <span>工具调用 ID（toolCallId）</span>
           <input
             type="text"
             :value="message.toolCallId || ''"
@@ -314,7 +314,7 @@ function updateToolChoice(value: string) {
 
     <section class="editor-block">
       <div class="block-header">
-        <h3>Tools</h3>
+        <h3>工具列表</h3>
         <button type="button" class="ghost-button" @click="addTool">新增工具</button>
       </div>
 
@@ -336,7 +336,7 @@ function updateToolChoice(value: string) {
         </div>
 
         <label class="field">
-          <span>type</span>
+          <span>工具类型（type）</span>
           <input
             type="text"
             :value="tool.type"
@@ -346,7 +346,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>function.name</span>
+          <span>工具名（function.name）</span>
           <input
             type="text"
             :value="tool.function.name"
@@ -356,7 +356,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>function.description</span>
+          <span>说明（function.description）</span>
           <textarea
             class="field-textarea"
             :value="tool.function.description"
@@ -365,7 +365,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>function.parameters</span>
+          <span>参数结构（function.parameters）</span>
           <textarea
             class="field-textarea code-field"
             :value="JSON.stringify(tool.function.parameters, null, 2)"
@@ -384,12 +384,12 @@ function updateToolChoice(value: string) {
 
     <section class="editor-block">
       <div class="block-header">
-        <h3>Request Options</h3>
+        <h3>请求选项</h3>
       </div>
 
       <div class="options-grid">
         <label class="field checkbox-field">
-          <span>stream</span>
+          <span>流式返回（stream）</span>
           <input
             type="checkbox"
             :checked="Boolean(template.requestOptions.stream)"
@@ -398,7 +398,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>temperature</span>
+          <span>温度（temperature）</span>
           <input
             type="number"
             step="0.1"
@@ -409,7 +409,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>maxTokens</span>
+          <span>最大输出（maxTokens）</span>
           <input
             type="number"
             min="1"
@@ -419,7 +419,7 @@ function updateToolChoice(value: string) {
         </label>
 
         <label class="field">
-          <span>toolChoice</span>
+          <span>工具策略（toolChoice）</span>
           <input
             type="text"
             :value="template.requestOptions.toolChoice ?? ''"
