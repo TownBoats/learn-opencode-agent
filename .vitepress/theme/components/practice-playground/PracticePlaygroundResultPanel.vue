@@ -56,7 +56,7 @@ const hasRunArtifacts = computed(() => {
 const statusMeta = computed(() => {
   if (props.runState.status === 'running') {
     return {
-      label: '运行中',
+      label: hasRunnableOutput.value ? '生成中' : '请求中',
       tone: 'running',
     }
   }
@@ -449,14 +449,16 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
 
 <template>
   <section :class="['result-panel', { expanded: hasExpandedPanel }]">
-    <div
-      v-if="activeToastMessage"
-      :class="['feedback-toast', activeToastTone]"
-      role="status"
-      aria-live="polite"
-    >
-      {{ activeToastMessage }}
-    </div>
+    <Transition name="toast-fade">
+      <div
+        v-if="activeToastMessage"
+        :class="['feedback-toast', activeToastTone]"
+        role="status"
+        aria-live="polite"
+      >
+        {{ activeToastMessage }}
+      </div>
+    </Transition>
 
     <article class="result-card summary-card">
       <div class="summary-header">
@@ -660,6 +662,18 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   color: #92400e;
 }
 
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  filter: blur(2px);
+}
+
 .result-card {
   border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 10%, var(--vp-c-divider));
   border-radius: 16px;
@@ -760,6 +774,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   border-color: color-mix(in srgb, var(--vp-c-brand-1) 40%, var(--vp-c-divider));
   background: color-mix(in srgb, var(--vp-c-brand-1) 10%, var(--vp-c-bg));
   color: var(--vp-c-brand-1);
+  animation: pulse-running 1.4s ease-in-out infinite;
 }
 
 .status-chip.success {
@@ -772,6 +787,17 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
   border-color: color-mix(in srgb, #ef4444 38%, var(--vp-c-divider));
   background: color-mix(in srgb, #ef4444 10%, var(--vp-c-bg));
   color: #b42318;
+}
+
+@keyframes pulse-running {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--vp-c-brand-1) 0%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--vp-c-brand-1) 10%, transparent);
+  }
 }
 
 .summary-grid {
