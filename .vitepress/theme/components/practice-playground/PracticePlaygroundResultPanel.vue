@@ -957,8 +957,64 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
     padding: 12px;
   }
 
+  .summary-header,
+  .card-header {
+    align-items: flex-start;
+  }
+
+  .summary-actions,
+  .card-actions {
+    width: 100%;
+  }
+
+  .summary-actions {
+    justify-content: space-between;
+  }
+
+  .card-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .card-actions-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .card-actions-secondary {
+    width: 100%;
+  }
+
+  .action-button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .summary-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .card-title {
+    width: 100%;
+  }
+
+  .card-actions-main {
+    grid-template-columns: 1fr;
+  }
+
+  .card-actions-secondary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
