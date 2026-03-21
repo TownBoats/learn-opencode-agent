@@ -174,7 +174,7 @@ async function handleCopyTemplateJson() {
         <span :class="['status-pill', draftStatusTone]">{{ draftStatusLabel }}</span>
         <span>最后修改：{{ lastEditedLabel }}</span>
         <span>改动仅在当前标签页有效</span>
-        <span v-if="copyStatus">{{ copyStatus }}</span>
+        <span v-if="copyStatus" role="status" aria-live="polite">{{ copyStatus }}</span>
       </div>
     </div>
 

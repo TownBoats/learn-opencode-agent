@@ -549,7 +549,7 @@ function findLastAbortLine(debugLines: string[]): string | null {
       <article class="workspace-pane result-pane">
         <div class="pane-label">右侧结果区</div>
         <h2>输出 / 调试</h2>
-        <p :class="['workspace-feedback', currentWorkspaceFeedback.tone]">
+        <p :class="['workspace-feedback', currentWorkspaceFeedback.tone]" role="status" aria-live="polite">
           {{ currentWorkspaceFeedback.text }}
         </p>
         <PracticePlaygroundResultPanel

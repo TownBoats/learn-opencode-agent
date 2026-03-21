@@ -234,7 +234,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
       <pre ref="outputPanelRef" :class="['output-panel', { empty: !runState.outputText.trim() }]">
         {{ outputSummary }}
       </pre>
-      <p v-if="outputCopyStatus" class="copy-status">{{ outputCopyStatus }}</p>
+      <p v-if="outputCopyStatus" class="copy-status" role="status" aria-live="polite">{{ outputCopyStatus }}</p>
     </article>
 
     <article class="result-card debug-card">
@@ -259,7 +259,7 @@ function resolveDebugTone(line: string): 'error' | 'warning' | 'trace' | 'neutra
           {{ entry.line }}
         </li>
       </ul>
-      <p v-if="debugCopyStatus" class="copy-status">{{ debugCopyStatus }}</p>
+      <p v-if="debugCopyStatus" class="copy-status" role="status" aria-live="polite">{{ debugCopyStatus }}</p>
     </article>
   </section>
 </template>

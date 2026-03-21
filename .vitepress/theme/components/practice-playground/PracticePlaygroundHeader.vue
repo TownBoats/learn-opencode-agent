@@ -53,8 +53,8 @@ const emit = defineEmits<{
           <span>{{ hasApiKey ? 'API Key 已配置' : 'API Key 未配置' }}</span>
         </p>
         <div class="header-status">
-          <span :class="['status-pill', workStatusTone]">{{ workStatusLabel }}</span>
-          <span class="status-hint">{{ workStatusHint }}</span>
+          <span :class="['status-pill', workStatusTone]" role="status" aria-live="polite">{{ workStatusLabel }}</span>
+          <span class="status-hint" aria-live="polite">{{ workStatusHint }}</span>
         </div>
       </div>
     </div>
