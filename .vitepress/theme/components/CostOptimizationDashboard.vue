@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { CostScenario, CostOptimizationDashboardProps, CostBreakdownItem } from './types'
+import type { CostScenario, CostBreakdownItem } from './types'
 
-const props = defineProps<CostOptimizationDashboardProps>()
+const props = defineProps<{ scenarios: CostScenario[] }>()
 
 const currentIdx = ref(0)
 const showOptimized = ref(false)

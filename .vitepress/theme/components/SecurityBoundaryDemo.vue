@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { SecurityScenario, SecurityBoundaryDemoProps } from './types'
+import type { SecurityScenario, SecurityRule } from './types'
 
-const props = defineProps<SecurityBoundaryDemoProps>()
+const props = defineProps<{ scenarios: SecurityScenario[], rules: SecurityRule[] }>()
 
 const currentIdx = ref(0)
 const isRunning = ref(false)

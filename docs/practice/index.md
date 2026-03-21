@@ -35,11 +35,13 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 ## 实践篇解决什么问题
 
+::: info 核心定位
 实践篇不是把理论篇再讲一遍，而是把“看懂 OpenCode 怎样实现”切换成“如果你自己来做，一个最小可运行 Agent 应该怎么逐步搭出来”。
+:::
 
-- 如果你刚读完理论篇第 1-4 章，最适合从 `P1-P4` 开始，把工具调用、多轮对话、流式输出和错误处理亲手跑通。
-- 如果你已经在理论篇里理解了会话、模型、工具和服务边界，实践篇就是把这些抽象概念改写成可执行 TypeScript 示例。
-- 如果你准备进入中级篇，实践篇里 `P7-P9`、`P15-P17`、`P18-P21` 会分别对应 RAG、多智能体协作和生产化专题。
+- **刚读完理论篇 1-4 章**：最适合从 `P1-P4` 开始，把工具调用、多轮对话、流式输出和错误处理亲手跑通。
+- **理解了抽象概念**：如果你已经在理论篇里理解了会话、模型、工具和服务边界，实践篇就是把这些抽象概念改写成可执行 TypeScript 示例。
+- **准备进阶中级篇**：实践篇里 `P7-P9`、`P15-P17`、`P18-P21` 会分别对应 RAG、多智能体协作和生产化专题。
 
 ## 课程阶段 {#phases}
 
@@ -78,10 +80,10 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 | 通用基础组 | `P1-P23` | `openai` |
 | MCP 扩展组 | `P14` | `@modelcontextprotocol/sdk` |
 
-补充说明：
-
+::: tip 补充说明
 - 除 `P14` 外，其余章节当前都只依赖 `openai` 和 Node 内置模块。
 - `P23` 的健康检查示例使用的是 `node:http`，不需要额外安装 Web 框架。
+:::
 
 ### 章节状态总表 {#chapter-matrix}
 
@@ -89,47 +91,48 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 
 | 章节 | 主题 | 难度 | 前置章节 | 额外依赖 | 入口脚本 |
 |------|------|------|----------|----------|----------|
-| P1 | 最小 Agent | beginner | 无 | 无 | `p01-minimal-agent.ts` |
-| P2 | 多轮对话 | beginner | `P1` | 无 | `p02-multi-turn.ts` |
-| P3 | 流式输出 | beginner | `P1` | 无 | `p03-streaming.ts` |
-| P4 | 错误处理与重试 | intermediate | `P1` `P2` | 无 | `p04-error-handling.ts` |
-| P5 | 记忆系统架构 | intermediate | `P1` `P2` | 无 | `p05-memory-arch.ts` |
-| P6 | 记忆增强检索 | intermediate | `P1` `P5` | 无 | `p06-memory-retrieval.ts` |
-| P7 | RAG 基础 | intermediate | `P1` `P5` | 无 | `p07-rag-basics.ts` |
-| P8 | GraphRAG | advanced | `P7` | 无 | `p08-graphrag.ts` |
-| P9 | 混合检索 | advanced | `P7` `P8` | 无 | `p09-hybrid-retrieval.ts` |
-| P10 | ReAct Loop | intermediate | `P1` `P4` | 无 | `p10-react-loop.ts` |
-| P11 | Planning | advanced | `P10` | 无 | `p11-planning.ts` |
-| P12 | Reflection | intermediate | `P10` | 无 | `p12-reflection.ts` |
-| P13 | 多模态 | intermediate | `P1` | 无 | `p13-multimodal.ts` |
-| P14 | MCP 协议接入 | advanced | `P1` `P4` | `@modelcontextprotocol/sdk` | `p14-mcp.ts` |
-| P15 | 多 Agent 编排 | advanced | `P1` `P11` | 无 | `p15-multi-agent.ts` |
-| P16 | 子 Agent 与任务分解 | advanced | `P1` `P15` | 无 | `p16-subagent.ts` |
-| P17 | Agent 通信与状态共享 | advanced | `P15` `P16` | 无 | `p17-agent-comm.ts` |
-| P18 | 多模型路由与成本控制 | intermediate | `P1` | 无 | `p18-model-routing.ts` |
-| P19 | Agent 安全与防注入 | advanced | `P1` `P4` | 无 | `p19-security.ts` |
-| P20 | 可观测性与调试 | intermediate | `P1` | 无 | `p20-observability.ts` |
-| P21 | 评估与基准测试 | intermediate | `P1` `P12` | 无 | `p21-evaluation.ts` |
-| P22 | 完整项目实战 | advanced | `P1` `P10` `P15` `P19` | 无 | `p22-project.ts` |
-| P23 | 生产部署清单 | intermediate | `P18` `P19` `P20` | 无 | `p23-production.ts` |
+| P1 | 最小 Agent | <Badge type="info" text="beginner" /> | 无 | 无 | `p01-minimal-agent.ts` |
+| P2 | 多轮对话 | <Badge type="info" text="beginner" /> | `P1` | 无 | `p02-multi-turn.ts` |
+| P3 | 流式输出 | <Badge type="info" text="beginner" /> | `P1` | 无 | `p03-streaming.ts` |
+| P4 | 错误处理与重试 | <Badge type="warning" text="intermediate" /> | `P1` `P2` | 无 | `p04-error-handling.ts` |
+| P5 | 记忆系统架构 | <Badge type="warning" text="intermediate" /> | `P1` `P2` | 无 | `p05-memory-arch.ts` |
+| P6 | 记忆增强检索 | <Badge type="warning" text="intermediate" /> | `P1` `P5` | 无 | `p06-memory-retrieval.ts` |
+| P7 | RAG 基础 | <Badge type="warning" text="intermediate" /> | `P1` `P5` | 无 | `p07-rag-basics.ts` |
+| P8 | GraphRAG | <Badge type="danger" text="advanced" /> | `P7` | 无 | `p08-graphrag.ts` |
+| P9 | 混合检索 | <Badge type="danger" text="advanced" /> | `P7` `P8` | 无 | `p09-hybrid-retrieval.ts` |
+| P10 | ReAct Loop | <Badge type="warning" text="intermediate" /> | `P1` `P4` | 无 | `p10-react-loop.ts` |
+| P11 | Planning | <Badge type="danger" text="advanced" /> | `P10` | 无 | `p11-planning.ts` |
+| P12 | Reflection | <Badge type="warning" text="intermediate" /> | `P10` | 无 | `p12-reflection.ts` |
+| P13 | 多模态 | <Badge type="warning" text="intermediate" /> | `P1` | 无 | `p13-multimodal.ts` |
+| P14 | MCP 协议接入 | <Badge type="danger" text="advanced" /> | `P1` `P4` | `@modelcontextprotocol/sdk` | `p14-mcp.ts` |
+| P15 | 多 Agent 编排 | <Badge type="danger" text="advanced" /> | `P1` `P11` | 无 | `p15-multi-agent.ts` |
+| P16 | 子 Agent 与任务分解 | <Badge type="danger" text="advanced" /> | `P1` `P15` | 无 | `p16-subagent.ts` |
+| P17 | Agent 通信与状态共享 | <Badge type="danger" text="advanced" /> | `P15` `P16` | 无 | `p17-agent-comm.ts` |
+| P18 | 多模型路由与成本控制 | <Badge type="warning" text="intermediate" /> | `P1` | 无 | `p18-model-routing.ts` |
+| P19 | Agent 安全与防注入 | <Badge type="danger" text="advanced" /> | `P1` `P4` | 无 | `p19-security.ts` |
+| P20 | 可观测性与调试 | <Badge type="warning" text="intermediate" /> | `P1` | 无 | `p20-observability.ts` |
+| P21 | 评估与基准测试 | <Badge type="warning" text="intermediate" /> | `P1` `P12` | 无 | `p21-evaluation.ts` |
+| P22 | 完整项目实战 | <Badge type="danger" text="advanced" /> | `P1` `P10` `P15` `P19` | 无 | `p22-project.ts` |
+| P23 | 生产部署清单 | <Badge type="warning" text="intermediate" /> | `P18` `P19` `P20` | 无 | `p23-production.ts` |
 
-快速建议：
-
+::: tip 快速建议
 - 如果你是第一次动手，优先按 `P1 -> P4 -> P10 -> P18` 走一遍，再回头扩展记忆、MCP、多 Agent。
 - 如果你只想看综合项目，至少先跑通 `P1`、`P10`、`P15`、`P19`，再进 `P22`。
 - 如果你当前只是想体验生产化包装，`P18`、`P19`、`P20` 跑完后直接进 `P23` 会更顺。
+:::
 
-### 阶段 1：Agent 基础
+<br>
 
+::: details 阶段 1：Agent 基础
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P1 | [最小 Agent](/practice/p01-minimal-agent/) | `bun run p01-minimal-agent.ts` |
 | P2 | [多轮对话](/practice/p02-multi-turn/) | `bun run p02-multi-turn.ts` |
 | P3 | [流式输出](/practice/p03-streaming/) | `bun run p03-streaming.ts` |
 | P4 | [错误处理](/practice/p04-error-handling/) | `bun run p04-error-handling.ts` |
+:::
 
-### 阶段 2：记忆与知识
-
+::: details 阶段 2：记忆与知识
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P5 | [记忆架构](/practice/p05-memory-arch/) | `bun run p05-memory-arch.ts` |
@@ -137,53 +140,54 @@ import PracticeTagCloud from '../../.vitepress/theme/components/PracticeTagCloud
 | P7 | [RAG 基础](/practice/p07-rag-basics/) | `bun run p07-rag-basics.ts` |
 | P8 | [GraphRAG](/practice/p08-graphrag/) | `bun run p08-graphrag.ts` |
 | P9 | [混合检索](/practice/p09-hybrid-retrieval/) | `bun run p09-hybrid-retrieval.ts` |
+:::
 
-### 阶段 3：推理与规划
-
+::: details 阶段 3：推理与规划
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P10 | [ReAct Loop](/practice/p10-react-loop/) | `bun run p10-react-loop.ts` |
 | P11 | [Planning](/practice/p11-planning/) | `bun run p11-planning.ts` |
 | P12 | [Reflection](/practice/p12-reflection/) | `bun run p12-reflection.ts` |
+:::
 
-### 阶段 4：感知扩展
-
+::: details 阶段 4：感知扩展
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P13 | [多模态](/practice/p13-multimodal/) | `bun run p13-multimodal.ts` |
 | P14 | [MCP 协议接入](/practice/p14-mcp/) | `bun run p14-mcp.ts` |
+:::
 
-### 阶段 5：多 Agent 协作
-
+::: details 阶段 5：多 Agent 协作
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P15 | [多 Agent 编排](/practice/p15-multi-agent/) | `bun run p15-multi-agent.ts` |
 | P16 | [Sub-Agent](/practice/p16-subagent/) | `bun run p16-subagent.ts` |
 | P17 | [Agent 通信](/practice/p17-agent-comm/) | `bun run p17-agent-comm.ts` |
+:::
 
-### 阶段 6：生产化
-
+::: details 阶段 6：生产化
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P18 | [模型路由](/practice/p18-model-routing/) | `bun run p18-model-routing.ts` |
 | P19 | [安全防护](/practice/p19-security/) | `bun run p19-security.ts` |
 | P20 | [可观测性](/practice/p20-observability/) | `bun run p20-observability.ts` |
 | P21 | [评估体系](/practice/p21-evaluation/) | `bun run p21-evaluation.ts` |
+:::
 
-### 阶段 7：综合实战
-
+::: details 阶段 7：综合实战
 | 章节 | 页面 | 运行命令 |
 |------|------|----------|
 | P22 | [Code Review Agent](/practice/p22-project/) | `bun run p22-project.ts` |
 | P23 | [生产部署清单](/practice/p23-production/) | `bun run p23-production.ts` |
+:::
 
-补充说明：
-
+::: info 补充说明
 - 全书统一使用 `bun run pxx-*.ts` 作为标准命令格式。
 - `P14` 章节除了 `p14-mcp.ts` 外，还需要 `practice/p14-mcp-server.ts` 配合运行，建议分两个终端分别执行：
   - `bun run p14-mcp-server.ts`
   - `bun run p14-mcp.ts`
 - 运行前仍建议先看 [实践环境准备](/practice/setup)，重点确认依赖，以及 `API Key / baseURL / model` 是否已经准备好。
+:::
 
 <style scoped>
 .practice-hero-section {

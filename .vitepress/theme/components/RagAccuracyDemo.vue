@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import type { RagScenario, RagAccuracyDemoProps, RagChunk } from './types'
+import type { RagScenario, RagChunk } from './types'
 
-const props = withDefaults(defineProps<RagAccuracyDemoProps>(), {
+const props = withDefaults(defineProps<{ scenarios: RagScenario[], autoPlay?: boolean }>(), {
   autoPlay: false,
 })
 
