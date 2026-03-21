@@ -46,11 +46,19 @@ interface PracticePlaygroundRunnerHandle {
   }) => Promise<void>
 }
 
+type WorkspaceFeedbackTone = 'neutral' | 'running' | 'success' | 'warning' | 'error'
+
 const selectedChapterId = ref<PracticePlaygroundChapterId>(DEFAULT_PRACTICE_PLAYGROUND_CHAPTER_ID)
 const playgroundConfig = ref<PracticePlaygroundConfig>(createDefaultPracticePlaygroundConfig())
 const settingsModalOpen = ref(false)
 const runState = ref<PracticePlaygroundRunState>(createInitialPracticePlaygroundRunState())
-const workspaceMessage = ref('在左侧调整请求模板后，可以直接在右侧查看输出和调试信息。')
+const workspaceFeedback = ref<{
+  text: string
+  tone: WorkspaceFeedbackTone
+}>({
+  text: '在左侧调整请求模板后，可以直接在右侧查看输出和调试信息。',
+  tone: 'neutral',
+})
 const editorViewMode = ref<PracticePlaygroundTemplateViewMode>('structured')
 
 const selectedChapter = computed(() => getPracticePlaygroundChapterById(selectedChapterId.value))
@@ -122,6 +130,41 @@ const isResetDisabled = computed(() => {
     && runState.value.status === 'idle'
     && lastAppliedTemplate.value === null
 })
+const derivedWorkspaceFeedback = computed<{
+  text: string
+  tone: WorkspaceFeedbackTone
+} | null>(() => {
+  if (runState.value.status === 'running') {
+    return {
+      text: `正在运行 ${selectedChapter.value.playground.title}，右侧会持续刷新输出和调试信息。`,
+      tone: 'running',
+    }
+  }
+
+  if (runState.value.status === 'success') {
+    return {
+      text: `本次运行已完成${formatDurationSuffix(runState.value.durationMs)}，可以继续调整模板后再次运行。`,
+      tone: 'success',
+    }
+  }
+
+  if (runState.value.status === 'error') {
+    return {
+      text: runState.value.errorMessage || '本次运行失败，请先查看右侧调试信息再继续修改模板。',
+      tone: 'error',
+    }
+  }
+
+  if (runState.value.finishedAt && isAbortSummary(runState.value.debugLines)) {
+    return {
+      text: findLastAbortLine(runState.value.debugLines) ?? '本次运行已取消。',
+      tone: 'warning',
+    }
+  }
+
+  return null
+})
+const currentWorkspaceFeedback = computed(() => derivedWorkspaceFeedback.value ?? workspaceFeedback.value)
 const runnerInput = computed(() =>
   adaptPracticeTemplateToRunnerInput(
     selectedChapter.value,
@@ -177,13 +220,19 @@ function handleChapterSelect(id: PracticePlaygroundChapterId) {
   runnerRef.value?.reset('请求已取消：你切换了章节，当前运行已中断。')
   selectedChapterId.value = id
   syncEditorStateForChapter(id)
-  workspaceMessage.value = `已切换到 ${getPracticePlaygroundChapterById(id).playground.title}。`
+  workspaceFeedback.value = {
+    text: `已切换到 ${getPracticePlaygroundChapterById(id).playground.title}。`,
+    tone: 'warning',
+  }
   pushChapterQuery(id)
 }
 
 function handlePopState() {
   syncChapterFromLocation()
-  workspaceMessage.value = `已切换到 ${selectedChapter.value.playground.title}。`
+  workspaceFeedback.value = {
+    text: `已切换到 ${selectedChapter.value.playground.title}。`,
+    tone: 'warning',
+  }
 }
 
 function handleOpenSettings() {
@@ -197,18 +246,30 @@ function handleSettingsClose() {
 function handleSettingsSave(nextConfig: PracticePlaygroundConfig) {
   playgroundConfig.value = nextConfig
   const didPersist = savePracticePlaygroundConfig(nextConfig)
-  workspaceMessage.value = didPersist
-    ? '配置已保存到当前浏览器。'
-    : '配置已更新；当前浏览器策略不允许写入本地存储。'
+  workspaceFeedback.value = didPersist
+    ? {
+        text: '配置已保存到当前浏览器。',
+        tone: 'success',
+      }
+    : {
+        text: '配置已更新；当前浏览器策略不允许写入本地存储。',
+        tone: 'warning',
+      }
   settingsModalOpen.value = false
 }
 
 function handleSettingsClear() {
   const didClear = clearPracticePlaygroundConfig()
   playgroundConfig.value = createDefaultPracticePlaygroundConfig()
-  workspaceMessage.value = didClear
-    ? '已清空本地配置并恢复默认值。'
-    : '已恢复默认值；当前浏览器策略不允许清理本地存储。'
+  workspaceFeedback.value = didClear
+    ? {
+        text: '已清空本地配置并恢复默认值。',
+        tone: 'warning',
+      }
+    : {
+        text: '已恢复默认值；当前浏览器策略不允许清理本地存储。',
+        tone: 'warning',
+      }
   settingsModalOpen.value = false
 }
 
@@ -223,7 +284,10 @@ function handleEditorViewModeUpdate(nextMode: PracticePlaygroundTemplateViewMode
 function handleResetTemplate() {
   runnerRef.value?.reset('请求已取消：你重置了模板，当前运行已中断。')
   syncEditorStateForChapter(selectedChapterId.value)
-  workspaceMessage.value = `已恢复 ${selectedChapter.value.playground.title} 的默认模板。`
+  workspaceFeedback.value = {
+    text: `已恢复 ${selectedChapter.value.playground.title} 的默认模板。`,
+    tone: 'warning',
+  }
 }
 
 function handleRunStateUpdate(nextState: PracticePlaygroundRunState) {
@@ -232,7 +296,10 @@ function handleRunStateUpdate(nextState: PracticePlaygroundRunState) {
 
 function handleRun() {
   if (!isConfigReady.value) {
-    workspaceMessage.value = '先在设置中补齐 API Key、接口地址和模型名称。'
+    workspaceFeedback.value = {
+      text: '先在设置中补齐 API Key、接口地址和模型名称。',
+      tone: 'warning',
+    }
     return
   }
 
@@ -243,14 +310,20 @@ function handleRun() {
       errorMessage: runValidationMessage.value,
       debugLines: [...runState.value.debugLines, `运行前校验失败：${runValidationMessage.value}`],
     }
-    workspaceMessage.value = runValidationMessage.value
+    workspaceFeedback.value = {
+      text: runValidationMessage.value,
+      tone: 'error',
+    }
     return
   }
 
   const appliedTemplate = clonePracticePlaygroundTemplate(editorState.value.template)
 
   lastAppliedTemplate.value = appliedTemplate
-  workspaceMessage.value = `已发起 ${selectedChapter.value.playground.title} 的运行请求，请在右侧查看输出和调试信息。`
+  workspaceFeedback.value = {
+    text: `已发起 ${selectedChapter.value.playground.title} 的运行请求，请在右侧查看输出和调试信息。`,
+    tone: 'running',
+  }
   void runnerRef.value?.run({
     chapter: selectedChapter.value,
     config: { ...playgroundConfig.value },
@@ -296,6 +369,25 @@ function getLockedToolIssue(
 
   return ''
 }
+
+function formatDurationSuffix(durationMs: number | null): string {
+  if (durationMs === null) return ''
+  return `，耗时 ${durationMs} ms`
+}
+
+function isAbortSummary(debugLines: string[]): boolean {
+  return debugLines.some((line) => /请求已取消|请求已重置|已切换章节|当前运行已中断/.test(line))
+}
+
+function findLastAbortLine(debugLines: string[]): string | null {
+  for (let index = debugLines.length - 1; index >= 0; index -= 1) {
+    const line = debugLines[index]
+    if (/请求已取消|请求已重置|已切换章节|当前运行已中断/.test(line)) {
+      return line
+    }
+  }
+  return null
+}
 </script>
 
 <template>
@@ -339,7 +431,9 @@ function getLockedToolIssue(
       <article class="workspace-pane result-pane">
         <div class="pane-label">右侧结果区</div>
         <h2>输出 / 调试</h2>
-        <p>{{ workspaceMessage }}</p>
+        <p :class="['workspace-feedback', currentWorkspaceFeedback.tone]">
+          {{ currentWorkspaceFeedback.text }}
+        </p>
         <p v-if="lastAppliedTemplate" class="placeholder-note">
           最近一次触发运行的模板：{{ lastAppliedTemplate.meta.title }}
         </p>
@@ -398,6 +492,42 @@ function getLockedToolIssue(
 
 .workspace-pane p {
   color: var(--vp-c-text-2);
+}
+
+.workspace-feedback {
+  margin: 12px 0 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 8%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-bg) 94%, white);
+  color: var(--vp-c-text-1);
+}
+
+.workspace-feedback.neutral {
+  color: var(--vp-c-text-2);
+}
+
+.workspace-feedback.running {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 28%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-brand-1) 10%, var(--vp-c-bg));
+}
+
+.workspace-feedback.success {
+  border-color: color-mix(in srgb, #16a34a 34%, var(--vp-c-divider));
+  background: color-mix(in srgb, #16a34a 10%, var(--vp-c-bg));
+  color: #166534;
+}
+
+.workspace-feedback.warning {
+  border-color: color-mix(in srgb, #f59e0b 34%, var(--vp-c-divider));
+  background: color-mix(in srgb, #f59e0b 10%, var(--vp-c-bg));
+  color: #92400e;
+}
+
+.workspace-feedback.error {
+  border-color: color-mix(in srgb, #ef4444 34%, var(--vp-c-divider));
+  background: color-mix(in srgb, #ef4444 10%, var(--vp-c-bg));
+  color: #b42318;
 }
 
 .placeholder-note {
