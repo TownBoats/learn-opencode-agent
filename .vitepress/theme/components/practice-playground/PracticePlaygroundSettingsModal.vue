@@ -18,6 +18,7 @@ const isApiKeyVisible = ref(false)
 const hasStoredApiKey = ref(false)
 const isReplacingApiKey = ref(true)
 const previousFocusedElement = ref<HTMLElement | null>(null)
+const modalCardRef = ref<HTMLElement | null>(null)
 const closeButtonRef = ref<HTMLButtonElement | null>(null)
 const apiKeyInputRef = ref<HTMLInputElement | null>(null)
 const baseUrlInputRef = ref<HTMLInputElement | null>(null)
@@ -100,8 +101,14 @@ function handleSave() {
 
 function handleWindowKeydown(event: KeyboardEvent) {
   if (!props.open) return
-  if (event.key !== 'Escape') return
-  emit('close')
+  if (event.key === 'Escape') {
+    emit('close')
+    return
+  }
+
+  if (event.key === 'Tab') {
+    trapFocusInsideModal(event)
+  }
 }
 
 function focusPreferredField() {
@@ -126,6 +133,55 @@ function focusPreferredField() {
   }
 
   baseUrlInputRef.value?.focus()
+  if (document.activeElement === baseUrlInputRef.value) return
+  closeButtonRef.value?.focus()
+}
+
+function getFocusableElements(): HTMLElement[] {
+  if (!modalCardRef.value) return []
+
+  return Array.from(
+    modalCardRef.value.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => {
+    if (element.getAttribute('aria-hidden') === 'true') return false
+    if (element.tabIndex < 0) return false
+    if ('offsetParent' in element && element.offsetParent === null && element !== document.activeElement) {
+      return false
+    }
+    return true
+  })
+}
+
+function trapFocusInsideModal(event: KeyboardEvent) {
+  const focusableElements = getFocusableElements()
+  if (focusableElements.length === 0) {
+    event.preventDefault()
+    closeButtonRef.value?.focus()
+    return
+  }
+
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+  const activeElement = document.activeElement as HTMLElement | null
+
+  if (!activeElement || !modalCardRef.value?.contains(activeElement)) {
+    event.preventDefault()
+    firstElement.focus()
+    return
+  }
+
+  if (event.shiftKey && activeElement === firstElement) {
+    event.preventDefault()
+    lastElement.focus()
+    return
+  }
+
+  if (!event.shiftKey && activeElement === lastElement) {
+    event.preventDefault()
+    firstElement.focus()
+  }
 }
 
 onMounted(() => {
@@ -146,6 +202,7 @@ onUnmounted(() => {
       @click.self="emit('close')"
     >
       <section
+        ref="modalCardRef"
         class="modal-card"
         role="dialog"
         aria-modal="true"
