@@ -11,7 +11,7 @@
     "check:content": "node scripts/check-content.mjs",
     "check:practice": "node scripts/check-practice-entries.mjs",
     "preview": "vitepress preview",
-    "start": "caddy run --config /Caddyfile --adapter caddyfile"
+    "start": "vitepress preview . --host 0.0.0.0 --port 3000"
   },
   "devDependencies": {
     "mermaid": "^11.13.0",
